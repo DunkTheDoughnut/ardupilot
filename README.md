@@ -1,80 +1,98 @@
-# ArduPilot Project
+## Ardupilot Fixed-wing with PCAC for Echopilot
+This codebase builds on prior work of pcac.cpp and pcac.hpp to implement PCAC in ardupilot on a fixed-wing vehicle. 
+This means that the core pcac code is designed to be implementation-independent. 
+A wrapper, AP_PCAC, interfaces pcac.cpp with the implementation-specific details.
+The functions for the elevator, throttle, and rudder/aileron lateral instances of pcac are scheduled in plane.cpp at a fixed rate on a single thread.
+This is one of the limitation of Ardupilot- it is not designed to run as a multithreaded program, and once oneStep is called, it will run until completion.
+This is markedly different from PX4, which is a multithreaded design where oneStep can be interrupted once an interval has been completed.
 
-[![Discord](https://img.shields.io/discord/674039678562861068.svg)](https://ardupilot.org/discord)
+## Cloning the repository and install
+https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux (clone this repo, not base ardupilot)
+  git clone git@github.com:DunkTheDoughnut/pcacEchopilot.git
+  Tools/environment_install/install-prereqs-ubuntu.sh -y
+  . ~/.profile
 
-[![Test Copter](https://github.com/ArduPilot/ardupilot/workflows/test%20copter/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_copter.yml) [![Test Plane](https://github.com/ArduPilot/ardupilot/workflows/test%20plane/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_plane.yml) [![Test Rover](https://github.com/ArduPilot/ardupilot/workflows/test%20rover/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_rover.yml) [![Test Sub](https://github.com/ArduPilot/ardupilot/workflows/test%20sub/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_sub.yml) [![Test Tracker](https://github.com/ArduPilot/ardupilot/workflows/test%20tracker/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_tracker.yml)
+## Setting up simulation environment
+This respository has been tested on Ubuntu Jammy.
 
-[![Test AP_Periph](https://github.com/ArduPilot/ardupilot/workflows/test%20ap_periph/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_periph.yml) [![Test Chibios](https://github.com/ArduPilot/ardupilot/workflows/test%20chibios/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_chibios.yml) [![Test Linux SBC](https://github.com/ArduPilot/ardupilot/workflows/test%20Linux%20SBC/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_linux_sbc.yml) [![Test Replay](https://github.com/ArduPilot/ardupilot/workflows/test%20replay/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_replay.yml)
+# Install qGroundControl
+https://docs.qgroundcontrol.com/master/en/qgc-user-guide/getting_started/download_and_install.html
 
-[![Test Unit Tests](https://github.com/ArduPilot/ardupilot/workflows/test%20unit%20tests%20and%20sitl%20building/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_unit_tests.yml)[![test size](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml)
+# Install gdb
+https://ardupilot.org/dev/docs/debugging-with-gdb-on-linux.html
 
-[![Test Environment Setup](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml)
+# Install python3
+https://www.python.org/downloads/
 
-[![Cygwin Build](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml) [![Macos Build](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml)
+# Update python libraries 
+  pip install --upgrade numpy
+  sudo apt install python3-tk
+  export MPLBACKEND=Qt5Agg
 
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/5331/badge.svg)](https://scan.coverity.com/projects/ardupilot-ardupilot)
+# Build SITL
+```bash
+  ./waf clean (not necessary every time)
+  ./waf configure --board sitl (or desired target)
+  ./waf plane -j3 --debug
+  ```
+  
+# Build and Flash Echopilot FMU
+On a host computer
+```bash
+  ./waf clean (not necessary every time)
+  ./waf configure --board sitl (or desired target)
+  ./waf configure --board EchopilotAI --enable-custom-controller
+  ./waf plane
+```
+Ensure the board is powered off
+Connect one end of a USB cable to the FMU USB port
+```bash
+  ./waf plane --upload
+```
+Once the "waiting for bootloader..." screen appears, plug the other end of the USB cable into the host computer.
+Ensure the cable is not unplugged during the flash process.
+    
+# GDB Commands	  
+    r (run)
+	break file:linenumber (optional)
+    break class::function (optional)
+    delete <breakpoint number>
+    n (next line/step over))
+    s (step into)
+    u (step out)
+    c (continue to next breakpoint)
+    CTRL + c (break)
+    q (quit)
+    print *<Eigen Matrix>.m_storage.data()@(<size>)
+    
+    info threads (show threads)
+    set scheduler-locking on (prevent changing threads)
+# GDB debugging after failure
+    bt (backtrace)
+    frame <frame number>
+    print <variable>
 
-[![Test Coverage](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml)
+# Rebuilding MAVLink messages
+    cd ./modules/mavlink/pymavlink$
+    python3 -m pip install Cython wheel setuptools future --user
+    python3 setup.py install --user
+    
+# Common Failures
+(bind failed - Address already in use)
+sudo lsof -i :<port>
+sudo kill -9 <PID>
 
-[![Autotest Status](https://autotest.ardupilot.org/autotest-badge.svg)](https://autotest.ardupilot.org/)
+(Model does not arm)
+Restart sim_vehicle.py with QGroundControl Mission
+Switch to AUTO manually
+Arm vehicle
+Load mission if not present
+Continue mission
 
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10598/badge)](https://www.bestpractices.dev/projects/10598)
-
-ArduPilot is the most advanced, full-featured, and reliable open source autopilot software available.
-It has been under development since 2010 by a diverse team of professional engineers, computer scientists, and community contributors.
-Our autopilot software is capable of controlling almost any vehicle system imaginable, from conventional airplanes, quad planes, multi-rotors, and helicopters to rovers, boats, balance bots, and even submarines.
-It is continually being expanded to provide support for new emerging vehicle types.
-
-## The ArduPilot project is made up of
-
-- ArduCopter: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduCopter), [wiki](https://ardupilot.org/copter/index.html)
-
-- ArduPlane: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduPlane), [wiki](https://ardupilot.org/plane/index.html)
-
-- Rover: [code](https://github.com/ArduPilot/ardupilot/tree/master/Rover), [wiki](https://ardupilot.org/rover/index.html)
-
-- ArduSub : [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduSub), [wiki](http://ardusub.com/)
-
-- Antenna Tracker : [code](https://github.com/ArduPilot/ardupilot/tree/master/AntennaTracker), [wiki](https://ardupilot.org/antennatracker/index.html)
-
-## User Support & Discussion Forums
-
-- Support Forum: <https://discuss.ardupilot.org/>
-
-- Community Site: <https://ardupilot.org>
-
-## Developer Information
-
-- Github repository: <https://github.com/ArduPilot/ardupilot>
-
-- Main developer wiki: <https://ardupilot.org/dev/>
-
-- Developer discussion: <https://discuss.ardupilot.org>
-
-- Developer chat: <https://discord.com/channels/ardupilot>
-
-## Top Contributors
-
-- [Flight code contributors](https://github.com/ArduPilot/ardupilot/graphs/contributors)
-- [Wiki contributors](https://github.com/ArduPilot/ardupilot_wiki/graphs/contributors)
-- [Most active support forum users](https://discuss.ardupilot.org/u?order=post_count&period=quarterly)
-- [Partners who contribute financially](https://ardupilot.org/about/Partners)
-
-## How To Get Involved
-
-- The ArduPilot project is open source and we encourage participation and code contributions: [guidelines for contributors to the ardupilot codebase](https://ardupilot.org/dev/docs/contributing.html)
-
-- We have an active group of Beta Testers to help us improve our code: [release procedures](https://ardupilot.org/dev/docs/release-procedures.html)
-
-- Desired Enhancements and Bugs can be posted to the [issues list](https://github.com/ArduPilot/ardupilot/issues).
-
-- Help other users with log analysis in the [support forums](https://discuss.ardupilot.org/)
-
-- Improve the wiki and chat with other [wiki editors on Discord #documentation](https://discord.com/channels/ardupilot)
-
-- Contact the developers on one of the [communication channels](https://ardupilot.org/copter/docs/common-contact-us.html)
-
-## License
+# Debugging console (without mavproxy or sitl setup)
+gdb --args build/sitl/bin/arduplane --model plane --defaults Tools/autotest/models/plane.parm
+    
+## License ##
 
 The ArduPilot project is licensed under the GNU General Public
 License, version 3.
@@ -82,81 +100,3 @@ License, version 3.
 - [Overview of license](https://ardupilot.org/dev/docs/license-gplv3.html)
 
 - [Full Text](https://github.com/ArduPilot/ardupilot/blob/master/COPYING.txt)
-
-## Maintainers
-
-ArduPilot is comprised of several parts, vehicles and boards. The list below
-contains the people that regularly contribute to the project and are responsible
-for reviewing patches on their specific area.
-
-- [Andrew Tridgell](https://github.com/tridge):
-  - ***Vehicle***: Plane, AntennaTracker
-  - ***Board***: Pixhawk, Pixhawk2, PixRacer
-- [Francisco Ferreira](https://github.com/oxinarf):
-  - ***Bug Master***
-- [Grant Morphett](https://github.com/gmorph):
-  - ***Vehicle***: Rover
-- [Willian Galvani](https://github.com/williangalvani):
-  - ***Vehicle***: Sub
-  - ***Board***: Navigator
-- [Michael du Breuil](https://github.com/WickedShell):
-  - ***Subsystem***: Batteries
-  - ***Subsystem***: GPS
-  - ***Subsystem***: Scripting
-- [Peter Barker](https://github.com/peterbarker):
-  - ***Subsystem***: DataFlash, Tools
-- [Randy Mackay](https://github.com/rmackay9):
-  - ***Vehicle***: Copter, Rover, AntennaTracker
-- [Siddharth Purohit](https://github.com/bugobliterator):
-  - ***Subsystem***: CAN, Compass
-  - ***Board***: Cube*
-- [Tom Pittenger](https://github.com/magicrub):
-  - ***Vehicle***: Plane
-- [Bill Geyer](https://github.com/bnsgeyer):
-  - ***Vehicle***: TradHeli
-- [Emile Castelnuovo](https://github.com/emilecastelnuovo):
-  - ***Board***: VRBrain
-- [Georgii Staroselskii](https://github.com/staroselskii):
-  - ***Board***: NavIO
-- [Gustavo José de Sousa](https://github.com/guludo):
-  - ***Subsystem***: Build system
-- [Julien Beraud](https://github.com/jberaud):
-  - ***Board***: Bebop & Bebop 2
-- [Leonard Hall](https://github.com/lthall):
-  - ***Subsystem***: Copter attitude control and navigation
-- [Matt Lawrence](https://github.com/Pedals2Paddles):
-  - ***Vehicle***: 3DR Solo & Solo based vehicles
-- [Matthias Badaire](https://github.com/badzz):
-  - ***Subsystem***: FRSky
-- [Mirko Denecke](https://github.com/mirkix):
-  - ***Board***: BBBmini, BeagleBone Blue, PocketPilot
-- [Paul Riseborough](https://github.com/priseborough):
-  - ***Subsystem***: AP_NavEKF2
-  - ***Subsystem***: AP_NavEKF3
-- [Víctor Mayoral Vilches](https://github.com/vmayoral):
-  - ***Board***: PXF, Erle-Brain 2, PXFmini
-- [Amilcar Lucas](https://github.com/amilcarlucas):
-  - ***Subsystem***: Marvelmind
-- [Samuel Tabor](https://github.com/samuelctabor):
-  - ***Subsystem***: Soaring/Gliding
-- [Henry Wurzburg](https://github.com/Hwurzburg):
-  - ***Subsystem***: OSD
-  - ***Site***: Wiki
-- [Peter Hall](https://github.com/IamPete1):
-  - ***Vehicle***: Tailsitters
-  - ***Vehicle***: Sailboat
-  - ***Subsystem***: Scripting
-- [Andy Piper](https://github.com/andyp1per):
-  - ***Subsystem***: Crossfire
-  - ***Subsystem***: ESC
-  - ***Subsystem***: OSD
-  - ***Subsystem***: SmartAudio
-- [Alessandro Apostoli](https://github.com/yaapu):
-  - ***Subsystem***: Telemetry
-  - ***Subsystem***: OSD
-- [Rishabh Singh](https://github.com/rishabsingh3003):
-  - ***Subsystem***: Avoidance/Proximity
-- [David Bussenschutt](https://github.com/davidbuzz):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
-- [Charles Villard](https://github.com/Silvanosky):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
