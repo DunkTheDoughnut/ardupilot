@@ -21,6 +21,8 @@
 #define MODE_AUTOLAND_ENABLED 1
 #endif
 
+enum unitVector {UNIT_I, UNIT_J, UNIT_K, UNIT_MAX};
+
 #include <AP_Quicktune/AP_Quicktune.h>
 
 class AC_PosControl;
@@ -70,7 +72,9 @@ public:
 #if MODE_AUTOLAND_ENABLED
         AUTOLAND      = 26,
 #endif
-
+#if AP_PCAC_ENABLED
+        PCAC =         27,  // Run PCAC controller
+#endif
     // Mode number 30 reserved for "offboard" for external/lua control.
     };
 
@@ -487,6 +491,44 @@ private:
 
 };
 #endif // HAL_QUADPLANE_ENABLED
+
+#if AP_PCAC_ENABLED
+class ModePcac : public Mode
+{
+public:
+    friend class Plane;
+
+    Number mode_number() const override { return Number::PCAC; }
+    const char *name() const override { return "PCAC"; }
+    const char *name4() const override { return "PCAC"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    bool allows_throttle_nudging() const override { return true; }
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+    
+    bool mode_allows_autotuning() const override { return false; }
+
+    bool is_landing() const override;
+    
+    void run() override;
+    
+    Matrix3f eulerOrientationMatrix(unitVector v,float theta);
+    
+    void update_pathBankAngle(void);
+
+protected:
+    bool _enter() override;
+    void _exit() override;
+    bool _pre_arm_checks(size_t buflen, char *buffer) const override { return true; }
+};
+#endif //AP_PCAC_ENABLED
 
 class ModeManual : public Mode
 {

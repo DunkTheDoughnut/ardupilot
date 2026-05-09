@@ -98,6 +98,9 @@ void Plane::rc_failsafe_short_on_event()
     case Mode::Number::QRTL:
     case Mode::Number::LOITER_ALT_QLAND:
 #endif
+#if AP_PCAC_ENABLED
+    case Mode::Number::PCAC:
+#endif
     case Mode::Number::INITIALISING:
         break;
     }
@@ -234,6 +237,9 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
     case Mode::Number::INITIALISING:
 #if MODE_AUTOLAND_ENABLED
     case Mode::Number::AUTOLAND:
+#endif
+#if AP_PCAC_ENABLED
+    case Mode::Number::PCAC:
 #endif
         break;
     }

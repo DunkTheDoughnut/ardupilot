@@ -30,6 +30,7 @@ protected:
     bool get_target_location(Location &loc) const override;
 
     void send_aoa_ssa();
+    void send_pcac_meas();
     void send_attitude() const override;
     void send_attitude_target() override;
     void send_wind() const;
@@ -67,6 +68,8 @@ private:
     void handle_set_position_target_global_int(const mavlink_message_t &msg);
     void handle_set_position_target_local_ned(const mavlink_message_t &msg);
     void handle_set_attitude_target(const mavlink_message_t &msg);
+    void handle_pcac_set_inputs(const mavlink_message_t &msg);
+    
 
 #if HAL_QUADPLANE_ENABLED
 #if AP_MAVLINK_COMMAND_LONG_ENABLED

@@ -62,6 +62,9 @@ uint8_t GCS_MAVLINK_Plane::base_mode() const
 #if MODE_AUTOLAND_ENABLED
     case Mode::Number::AUTOLAND:
 #endif
+#if AP_PCAC_ENABLED
+    case Mode::Number::PCAC:
+#endif
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QRTL:
     case Mode::Number::LOITER_ALT_QLAND:
@@ -127,6 +130,22 @@ MAV_STATE GCS_MAVLINK_Plane::vehicle_system_status() const
     return MAV_STATE_STANDBY;
 }
 
+void GCS_MAVLINK_Plane::send_pcac_meas()
+{
+    mavlink_msg_pcac_measurements_send(
+        chan,
+        plane.heading,
+        vfr_hud_airspeed(),
+        plane.flightPathAngle,
+        plane.pathBankAngle,
+        plane.navCmdDelta,
+        plane.navCmdStep,
+        plane.TECS_controller.get_throttle_demand(),
+        plane.stabilize_pitch_get_pitch_out(),
+        plane.stabilize_roll_get_roll_out(),
+        plane.calc_nav_yaw_coordinated()
+        );
+}
 
 void GCS_MAVLINK_Plane::send_attitude() const
 {
@@ -411,7 +430,11 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
 #if AP_AIRSPEED_HYGROMETER_ENABLE
         CHECK_PAYLOAD_SIZE(HYGROMETER_SENSOR);
         send_hygrometer();
-#endif
+    #endif
+    break; 
+    case MSG_PCAC_MEASUREMENTS:
+        CHECK_PAYLOAD_SIZE(PCAC_MEASUREMENTS);
+        send_pcac_meas();
         break;
 
     default:
@@ -1003,7 +1026,9 @@ void GCS_MAVLINK_Plane::handle_message(const mavlink_message_t &msg)
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
         handle_set_position_target_global_int(msg);
         break;
-
+    case MAVLINK_MSG_ID_PCAC_SET_INPUTS:
+        handle_pcac_set_inputs(msg);
+        break;
     default:
         GCS_MAVLINK::handle_message(msg);
         break;
@@ -1136,6 +1161,28 @@ void GCS_MAVLINK_Plane::handle_set_position_target_global_int(const mavlink_mess
             };
             handle_change_alt_request(loc);
         }
+    }
+
+void GCS_MAVLINK_Plane::handle_pcac_set_inputs(const mavlink_message_t &msg)
+    {
+        // Only allow in pcac mode as failsafe
+        if (plane.control_mode != &plane.mode_pcac) {
+            return;
+        }
+
+        mavlink_pcac_set_inputs_t pcac_inputs;
+        mavlink_msg_pcac_set_inputs_decode(&msg, &pcac_inputs);
+        
+        if (plane.mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND && plane.landing.is_throttle_suppressed()) {
+            // if landing is considered complete throttle is never allowed, regardless of landing type
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
+        } else {
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, pcac_inputs.throttleInput);
+        }
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, pcac_inputs.aileronInput);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pcac_inputs.elevatorInput);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, pcac_inputs.rudderInput);
+        
     }
 
 MAV_RESULT GCS_MAVLINK_Plane::handle_command_do_set_mission_current(const mavlink_command_int_t &packet)

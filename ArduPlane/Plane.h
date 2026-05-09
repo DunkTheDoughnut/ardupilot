@@ -177,6 +177,9 @@ public:
 #if MODE_AUTOLAND_ENABLED
     friend class ModeAutoLand;
 #endif
+#if AP_PCAC_ENABLED
+    friend class ModePcac;
+#endif
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
 #endif
@@ -328,6 +331,9 @@ private:
 #if MODE_AUTOLAND_ENABLED
     ModeAutoLand mode_autoland;
 #endif
+#if AP_PCAC_ENABLED
+    ModePcac mode_pcac;
+#endif
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
@@ -435,7 +441,15 @@ private:
     AP_BattMonitor battery{MASK_LOG_CURRENT,
                            FUNCTOR_BIND_MEMBER(&Plane::handle_battery_failsafe, void, const char*, const int8_t),
                            _failsafe_priorities};
-
+#if AP_PCAC_ENABLED
+    bool    custom_control_reset_last;
+    bool    custom_control_mission_active;
+    float   pathBankAngle;
+    float   heading;
+    float   flightPathAngle;
+    float   navCmdDelta;
+    uint16_t navCmdStep;
+#endif
     struct {
         uint32_t last_tkoff_arm_time;
         uint32_t last_check_ms;
@@ -1049,7 +1063,11 @@ private:
     uint8_t get_mode() const override { return (uint8_t)control_mode->mode_number(); }
     Mode *mode_from_mode_num(const enum Mode::Number num);
     bool current_mode_requires_mission() const override {
-        return control_mode == &mode_auto;
+        return (control_mode == &mode_auto)
+#if AP_PCAC_ENABLED
+        || (control_mode == &mode_pcac)
+#endif
+        ;
     }
 
     bool autotuning;

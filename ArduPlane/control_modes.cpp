@@ -99,6 +99,11 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         break;
 #endif  // HAL_QUADPLANE_ENABLED
 
+#if AP_PCAC_ENABLED
+    case Mode::Number::PCAC:
+        ret = &mode_pcac;
+        break;
+#endif
     }
     return ret;
 }

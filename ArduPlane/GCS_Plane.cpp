@@ -68,6 +68,9 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
 #if MODE_AUTOLAND_ENABLED
     case Mode::Number::AUTOLAND:
 #endif
+#if AP_PCAC_ENABLED
+    case Mode::Number::PCAC:
+#endif
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QRTL:
     case Mode::Number::LOITER_ALT_QLAND:
