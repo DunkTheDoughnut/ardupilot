@@ -63,7 +63,7 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
     // determine stage
     if (type_slope_stage == SlopeStage::NORMAL) {
         const bool heading_lined_up = abs(nav_controller->bearing_error_cd()) < 1000 && !nav_controller->data_is_stale();
-        const bool on_flight_line = fabsf(nav_controller->crosstrack_error()) < 5.0f && !nav_controller->data_is_stale();
+        const bool on_flight_line = fabsf(nav_controller->crosstrack_error_m()) < 5.0f && !nav_controller->data_is_stale();
         const bool below_prev_WP = current_loc.alt < loc_alt_AMSL_cm(prev_WP_loc);
         if ((mission.get_prev_nav_cmd_id() == MAV_CMD_NAV_LOITER_TO_ALT) ||
             (wp_proportion >= 0 && heading_lined_up && on_flight_line) ||
@@ -168,7 +168,7 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
 
     if (mission.continue_after_land() &&
         type_slope_stage == SlopeStage::FINAL &&
-        gps.status() >= AP_GPS::GPS_OK_FIX_3D &&
+        gps.status() >= AP_GPS_FixType::FIX_3D &&
         gps.ground_speed() < 1) {
         /*
           user has requested to continue with mission after a
@@ -189,6 +189,10 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
 
 void AP_Landing::type_slope_adjust_landing_slope_for_rangefinder_bump(AP_FixedWing::Rangefinder_State &rangefinder_state, Location &prev_WP_loc, Location &next_WP_loc, const Location &current_loc, const float wp_distance, int32_t &target_altitude_offset_cm)
 {
+    if (!rangefinder_state.in_use) {
+        return;
+    }
+
     // check the rangefinder correction for a large change. When found, recalculate the glide slope. This is done by
     // determining the slope from your current location to the land point then following that back up to the approach
     // altitude and moving the prev_wp to that location. From there

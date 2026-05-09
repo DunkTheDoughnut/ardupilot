@@ -188,6 +188,7 @@ for t in $CI_BUILD_TARGET; do
     if [ "$t" == "sitltest-rover" ]; then
         sudo apt-get update || /bin/true
         sudo apt-get install -y ppp || /bin/true
+        pppd --help # fail with `command not found` if ppp install failed
         run_autotest "Rover" "build.Rover" "test.Rover"
         continue
     fi
@@ -517,9 +518,14 @@ for t in $CI_BUILD_TARGET; do
         echo "Checking AStyle code cleanliness"
 
         ./Tools/scripts/run_astyle.py --dry-run
-        if [ $? -ne 0 ]; then
-            echo The code failed astyle cleanliness checks. Please run ./Tools/scripts/run_astyle.py
-        fi
+        continue
+    fi
+
+    if [ "$t" == "shellcheck" ]; then
+        echo "Running shellcheck on scripts"
+
+        # Ignore scripts in the modules directory
+        find . -path ./modules -prune -o -type f -name '*.sh' -exec shellcheck --severity=error '{}' +
         continue
     fi
 

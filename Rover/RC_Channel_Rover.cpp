@@ -17,12 +17,12 @@ int8_t RC_Channels_Rover::flight_mode_channel_number() const
 
 void RC_Channel_Rover::mode_switch_changed(modeswitch_pos_t new_pos)
 {
-    if (new_pos < 0 || (uint8_t)new_pos > rover.num_modes) {
+    if (new_pos < 0 || (uint8_t)new_pos >= ARRAY_SIZE(rover.g.modes)) {
         // should not have been called
         return;
     }
 
-    rover.set_mode((Mode::Number)rover.modes[new_pos].get(), ModeReason::RC_COMMAND);
+    rover.set_mode((Mode::Number)rover.g.modes[new_pos].get(), ModeReason::RC_COMMAND);
 }
 
 // init_aux_switch_function - initialize aux functions
@@ -73,7 +73,7 @@ bool RC_Channels_Rover::has_valid_input() const
     if (in_rc_failsafe()) {
         return false;
     }
-    return true;
+    return RC_Channels::has_valid_input();
 }
 
 RC_Channel * RC_Channels_Rover::get_arming_channel(void) const

@@ -2,6 +2,8 @@
 AP_FLAKE8_CLEAN
 '''
 
+from __future__ import annotations
+
 import atexit
 import math
 import os
@@ -13,13 +15,7 @@ import sys
 import tempfile
 import time
 
-
 import pexpect
-
-if sys.version_info[0] >= 3:
-    ENCODING = 'ascii'
-else:
-    ENCODING = None
 
 RADIUS_OF_EARTH = 6378100.0  # in meters
 
@@ -90,13 +86,19 @@ def waf_configure(board,
                   ekf_single=False,
                   postype_single=False,
                   force_32bit=False,
-                  extra_args=[],
+                  extra_args: list | None = None,
                   extra_hwdef=None,
                   ubsan=False,
                   ubsan_abort=False,
                   num_aux_imus=0,
                   dronecan_tests=False,
-                  extra_defines={}):
+                  extra_defines: dict | None = None):
+
+    if extra_args is None:
+        extra_args = []
+    if extra_defines is None:
+        extra_defines = {}
+
     cmd_configure = [relwaf(), "configure", "--board", board]
     if debug:
         cmd_configure.append('--debug')
@@ -149,8 +151,8 @@ def build_SITL(
         coverage=False,
         debug=False,
         ekf_single=False,
-        extra_configure_args=[],
-        extra_defines={},
+        extra_configure_args: list | None = None,
+        extra_defines: dict | None = None,
         j=None,
         math_check_indexes=False,
         postype_single=False,
@@ -160,6 +162,10 @@ def build_SITL(
         num_aux_imus=0,
         dronecan_tests=False,
 ):
+    if extra_configure_args is None:
+        extra_configure_args = []
+    if extra_defines is None:
+        extra_defines = {}
 
     # first configure
     if configure:
@@ -193,7 +199,10 @@ def build_SITL(
 def build_examples(board, j=None, debug=False, clean=False, configure=True, math_check_indexes=False, coverage=False,
                    ekf_single=False, postype_single=False, force_32bit=False, ubsan=False, ubsan_abort=False,
                    num_aux_imus=0, dronecan_tests=False,
-                   extra_configure_args=[]):
+                   extra_configure_args: list | None = None):
+    if extra_configure_args is None:
+        extra_configure_args = []
+
     # first configure
     if configure:
         waf_configure(board,
@@ -247,7 +256,9 @@ def build_tests(board,
                 ubsan_abort=False,
                 num_aux_imus=0,
                 dronecan_tests=False,
-                extra_configure_args=[]):
+                extra_configure_args: list | None = None):
+    if extra_configure_args is None:
+        extra_configure_args = []
 
     # first configure
     if configure:
@@ -304,11 +315,11 @@ def pexpect_close(p):
             time.sleep(0.05)
     try:
         p.close()
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
     try:
         p.close(force=True)
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
     if p in close_list:
         close_list.remove(p)
@@ -324,7 +335,7 @@ def pexpect_drain(p):
     """Drain any pending input."""
     try:
         p.read_nonblocking(1000, timeout=0)
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
 
 
@@ -417,21 +428,28 @@ def start_SITL(binary,
                model=None,
                speedup=1,
                sim_rate_hz=None,
-               defaults_filepath=[],
+               defaults_filepath: list | None = None,
                param_defaults=None,  # dictionary
                unhide_parameters=False,
                gdbserver=False,
-               breakpoints=[],
+               breakpoints: list | None = None,
                disable_breakpoints=False,
-               customisations=[],
+               customisations: list | None = None,
                lldb=False,
                strace=False,
                enable_fgview=False,
                supplementary=False,
                stdout_prefix=None,
                ):
-
     """Launch a SITL instance."""
+
+    if defaults_filepath is None:
+        defaults_filepath = []
+    if breakpoints is None:
+        breakpoints = []
+    if customisations is None:
+        customisations = []
+
     cmd = []
     # pexpect doesn't like pathlib:
     if cwd is not None:
@@ -598,14 +616,14 @@ def start_SITL(binary,
         # meantime, return a dummy:
         return pexpect.spawn("true", ["true"],
                              logfile=pexpect_logfile,
-                             encoding=ENCODING,
+                             encoding='ascii',
                              timeout=5)
     else:
         print("Running: %s" % cmd_as_shell(cmd))
 
         first = cmd[0]
         rest = cmd[1:]
-        child = pexpect.spawn(str(first), rest, logfile=pexpect_logfile, encoding=ENCODING, timeout=5, cwd=cwd)
+        child = pexpect.spawn(str(first), rest, logfile=pexpect_logfile, encoding='ascii', timeout=5, cwd=cwd)
         pexpect_autoclose(child)
     if gdb or lldb:
         # if we run GDB we do so in an xterm.  "Waiting for
@@ -639,11 +657,14 @@ def start_MAVProxy_SITL(atype,
                         aircraft=None,
                         setup=False,
                         master=None,
-                        options=[],
+                        options: list | None = None,
                         sitl_rcin_port=5501,
                         pexpect_timeout=60,
                         logfile=sys.stdout):
     """Launch mavproxy connected to a SITL instance."""
+    if options is None:
+        options = []
+
     if master is None:
         raise ValueError("Expected a master")
 
@@ -670,7 +691,7 @@ def start_MAVProxy_SITL(atype,
     print("PYTHONPATH: %s" % str(env['PYTHONPATH']))
     print("Running: %s" % cmd_as_shell(cmd))
 
-    ret = pexpect.spawn(cmd[0], cmd[1:], logfile=logfile, encoding=ENCODING, timeout=pexpect_timeout, env=env)
+    ret = pexpect.spawn(cmd[0], cmd[1:], logfile=logfile, encoding='ascii', timeout=pexpect_timeout, env=env)
     ret.delaybeforesend = 0
     pexpect_autoclose(ret)
     return ret
@@ -683,7 +704,7 @@ def start_PPP_daemon(ips, sockaddr):
     cmd = cmd.split()
     print("Running: %s" % cmd_as_shell(cmd))
 
-    ret = pexpect.spawn(cmd[0], cmd[1:], logfile=sys.stdout, encoding=ENCODING, timeout=30)
+    ret = pexpect.spawn(cmd[0], cmd[1:], logfile=sys.stdout, encoding='ascii', timeout=30)
     ret.delaybeforesend = 0
     pexpect_autoclose(ret)
     return ret
@@ -760,7 +781,12 @@ def gps_newpos(lat, lon, bearing, distance):
     """Extrapolate latitude/longitude given a heading and distance
     thanks to http://www.movable-type.co.uk/scripts/latlong.html .
     """
-    from math import sin, asin, cos, atan2, radians, degrees
+    from math import asin
+    from math import atan2
+    from math import cos
+    from math import degrees
+    from math import radians
+    from math import sin
 
     lat1 = radians(lat)
     lon1 = radians(lon)
@@ -818,23 +844,17 @@ def constrain(value, minv, maxv):
 def load_local_module(fname):
     """load a python module from within the ardupilot tree"""
     fname = os.path.join(topdir(), fname)
-    if sys.version_info.major >= 3:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("local_module", fname)
-        ret = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ret)
-    else:
-        import imp
-        ret = imp.load_source("local_module", fname)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("local_module", fname)
+    ret = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ret)
     return ret
 
 
 def get_git_hash(short=False):
     short_v = "--short=8 " if short else ""
     githash = run_cmd(f'git rev-parse {short_v}HEAD', output=True, directory=reltopdir('.')).strip()
-    if sys.version_info.major >= 3:
-        githash = githash.decode('utf-8')
-    return githash
+    return githash.decode('utf-8')
 
 
 if __name__ == "__main__":

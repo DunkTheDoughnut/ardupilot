@@ -435,6 +435,15 @@ public:
             }
             return turns;
         }
+
+        /*
+          return the arc angle in radians for an ARC_WAYPOINT command
+          this has special handling for arc waypoints using cmd.p1 and loiter_ccw
+         */
+        float get_arc_angle_rad(void) const {
+            const float sign = (content.location.loiter_ccw == 0) ? 1.0f : -1.0f;
+            return radians(float(p1) * sign);
+        }
     };
 
 
@@ -529,6 +538,9 @@ public:
 
     /// reset - reset mission to the first command
     void reset();
+
+    /// reset_jump_counters - reset DO_JUMP counters to their initial values without affecting current position
+    void reset_jump_counters() { init_jump_tracking(); }
 
     /// clear - clears out mission
     bool clear();
