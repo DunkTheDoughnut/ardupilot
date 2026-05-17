@@ -7,10 +7,12 @@ This is one of the limitation of Ardupilot- it is not designed to run as a multi
 This is markedly different from PX4, which is a multithreaded design where oneStep can be interrupted once an interval has been completed.
 
 ## Cloning the repository and install
-https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux (clone this repo, not base ardupilot)
-  git clone git@github.com:DunkTheDoughnut/pcacEchopilot.git
+https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux
+```bash
+  git clone git@github.com:DunkTheDoughnut/ardupilot.git
   Tools/environment_install/install-prereqs-ubuntu.sh -y
   . ~/.profile
+```
 
 ## Setting up simulation environment
 This respository has been tested on Ubuntu Jammy.
@@ -25,22 +27,30 @@ https://ardupilot.org/dev/docs/debugging-with-gdb-on-linux.html
 https://www.python.org/downloads/
 
 # Update python libraries 
+```bash
   pip install --upgrade numpy
   sudo apt install python3-tk
   export MPLBACKEND=Qt5Agg
+```
+# Rebuild MAVLink messages
+Copy ardupilotmega.xml from ros2pcac repository
+```bash
+    cd ./modules/mavlink/pymavlink$
+    python3 -m pip install Cython wheel setuptools future --user
+    python3 setup.py install --user
+```
 
 # Build SITL
 ```bash
-  ./waf clean (not necessary every time)
-  ./waf configure --board sitl (or desired target)
+  ./waf clean #(not necessary every time)
+  ./waf configure --board sitl #(or desired target)
   ./waf plane -j3 --debug
-  ```
+```
   
 # Build and Flash Echopilot FMU
 On a host computer
 ```bash
-  ./waf clean (not necessary every time)
-  ./waf configure --board sitl (or desired target)
+  ./waf clean #(not necessary every time)
   ./waf configure --board EchopilotAI --enable-custom-controller
   ./waf plane
 ```
@@ -71,27 +81,17 @@ Ensure the cable is not unplugged during the flash process.
     bt (backtrace)
     frame <frame number>
     print <variable>
-
-# Rebuilding MAVLink messages
-    cd ./modules/mavlink/pymavlink$
-    python3 -m pip install Cython wheel setuptools future --user
-    python3 setup.py install --user
     
 # Common Failures
 (bind failed - Address already in use)
 sudo lsof -i :<port>
 sudo kill -9 <PID>
 
-(Model does not arm)
-Restart sim_vehicle.py with QGroundControl Mission
-Switch to AUTO manually
-Arm vehicle
-Load mission if not present
-Continue mission
-
 # Debugging console (without mavproxy or sitl setup)
+```bash
 gdb --args build/sitl/bin/arduplane --model plane --defaults Tools/autotest/models/plane.parm
-    
+```
+
 ## License ##
 
 The ArduPilot project is licensed under the GNU General Public
