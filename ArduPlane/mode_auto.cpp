@@ -124,7 +124,6 @@ void ModeAuto::update()
         plane.calc_nav_pitch();
         plane.calc_throttle();
     }
-    gcs().send_message(MSG_PCAC_MEASUREMENTS);
 }
 
 void ModeAuto::navigate()

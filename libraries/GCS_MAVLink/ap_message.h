@@ -118,7 +118,9 @@ enum ap_message : uint8_t {
 #if AP_MAVLINK_UTM_GLOBAL_POSITION_SENDING_ENABLED
     MSG_UTM_GLOBAL_POSITION            = 101,
 #endif  // AP_MAVLINK_UTM_GLOBAL_POSITION_SENDING_ENABLED
+#if AP_PCAC_ENABLED
     MSG_PCAC_MEASUREMENTS              = 102,
     MSG_PCAC_SET_INPUTS                = 103,
+#endif // AP_PCAC_ENABLED
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

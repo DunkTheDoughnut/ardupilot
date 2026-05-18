@@ -397,9 +397,10 @@ Vector3f Plane::getForce(float inputAileron, float inputElevator, float inputRud
 
 void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel)
 {
-    float aileron  = filtered_servo_angle(input, 0);
+    //Reverse aileron and rudder to match Ex
+    float aileron  = -filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
-    float rudder   = filtered_servo_angle(input, 3);
+    float rudder   = -filtered_servo_angle(input, 3);
     bool launch_triggered = input.servos[6] > 1700;
     if (reverse_elevator_rudder) {
         elevator = -elevator;

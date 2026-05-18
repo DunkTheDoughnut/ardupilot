@@ -95,7 +95,6 @@ void ModePcac::update()
     }
     plane.navCmdDelta = nav_cmd_delta;
     plane.navCmdStep = nav_cmd_step;
-    gcs().send_message(MSG_PCAC_MEASUREMENTS);
 }
 
 void ModePcac::navigate()

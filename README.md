@@ -81,6 +81,7 @@ Ensure the cable is not unplugged during the flash process.
     bt (backtrace)
     frame <frame number>
     print <variable>
+
     
 # Common Failures
 (bind failed - Address already in use)
