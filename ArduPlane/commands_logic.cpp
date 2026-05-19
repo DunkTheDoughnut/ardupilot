@@ -27,7 +27,7 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         loiter.start_time_ms = 0;
 
         // Mission lookahead is only valid in auto
-        if (control_mode == &mode_auto) {
+        if (current_mode_requires_mission()) {
             AP_Mission::Mission_Command next_nav_cmd;
             const uint16_t next_index = mission.get_current_nav_index() + 1;
             const bool have_next_cmd = mission.get_next_nav_cmd(next_index, next_nav_cmd);
@@ -1019,7 +1019,7 @@ void Plane::do_set_home(const AP_Mission::Mission_Command& cmd)
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 bool Plane::start_command_callback(const AP_Mission::Mission_Command &cmd)
 {
-    if (control_mode == &mode_auto) {
+    if (current_mode_requires_mission()) {
         return start_command(cmd);
     }
     return true;
@@ -1046,7 +1046,7 @@ bool Plane::verify_command_callback(const AP_Mission::Mission_Command& cmd)
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 void Plane::exit_mission_callback()
 {
-    if (control_mode == &mode_auto) {
+    if (current_mode_requires_mission()) {
         set_mode(mode_rtl, ModeReason::MISSION_END);
         gcs().send_text(MAV_SEVERITY_INFO, "Mission complete, changing mode to RTL");
     }
@@ -1249,7 +1249,7 @@ bool Plane::nav_scripting_active(void)
         nav_scripting.run_yaw_rate_controller = true;
         gcs().send_text(MAV_SEVERITY_INFO, "NavScript time out");
     }
-    if (control_mode == &mode_auto &&
+    if (current_mode_requires_mission() &&
         mission.get_current_nav_cmd().id != MAV_CMD_NAV_SCRIPT_TIME) {
         nav_scripting.enabled = false;
     }

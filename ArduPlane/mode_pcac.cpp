@@ -63,15 +63,12 @@ void ModePcac::update()
 
     // Get current position and velocity
     if (ahrs.get_location(p0) == true) {
-        // update _target_bearing_cd
-        // _target_bearing_cd = p0.get_bearing_to(next_WP);
         prev_cmd_id = plane.mission.get_prev_nav_cmd_with_wp_index();
         if (prev_cmd_id != AP_MISSION_CMD_INDEX_NONE)
         {
             plane.mission.get_next_nav_cmd(prev_cmd_id, prev_cmd);
             //Determine distance to waypoint
             r_cmd_pk = p0.get_distance_NE(cmd.content.location);
-            //r_cmd_pk_hat = normalize(r_cmd_pk)
             //Use ceiling so that first step is always zero command
             v_proj_to_r = v_p_wrt_0_in_NED.projected(r_cmd_pk);
             //Check for correct sign
