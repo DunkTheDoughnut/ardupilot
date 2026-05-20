@@ -231,7 +231,7 @@ void Plane::calc_airspeed_errors()
         target_airspeed_cm = landing.get_target_airspeed_cm();
     } else if (control_mode == &mode_guided && new_airspeed_cm > 0) { //DO_CHANGE_SPEED overrides onboard guided speed commands, user would have re-enter guided mode to revert
                        target_airspeed_cm = new_airspeed_cm;
-    } else if (control_mode == &mode_auto) {
+    } else if (current_mode_requires_mission()) {
         target_airspeed_cm = mode_auto_target_airspeed_cm();
 #if HAL_QUADPLANE_ENABLED
     } else if (control_mode == &mode_qrtl && quadplane.in_vtol_land_approach()) {
@@ -341,7 +341,7 @@ void Plane::update_loiter_update_nav(uint16_t radius)
 #endif
 
     if ((loiter.start_time_ms == 0 &&
-         (control_mode == &mode_auto || control_mode == &mode_guided) &&
+         (current_mode_requires_mission() || control_mode == &mode_guided) &&
          auto_state.crosstrack &&
          current_loc.get_distance(next_WP_loc) > 3 * nav_controller->loiter_radius(radius)) ||
         quadplane_qrtl_switch) {
