@@ -3,11 +3,14 @@
 
 bool ModeAuto::_enter()
 {
+#if AP_PCAC_ENABLED
     //Do not restart mission when transitioning from pcac mode
     if(plane.custom_control_mission_active){
         plane.custom_control_mission_active = false;
     }
-    else{
+    else
+#endif //AP_PCAC_ENABLED
+    {
 #if HAL_QUADPLANE_ENABLED
     // check if we should refuse auto mode due to a missing takeoff in
     // guided_wait_takeoff state
@@ -49,7 +52,11 @@ bool ModeAuto::_enter()
 
 void ModeAuto::_exit()
 {
-    if (plane.mission.state() == AP_Mission::MISSION_RUNNING && !plane.custom_control_mission_active) {
+    if (plane.mission.state() == AP_Mission::MISSION_RUNNING
+#if AP_PCAC_ENABLED
+        && !plane.custom_control_mission_active
+#endif //AP_PCAC_ENABLED
+        ) {
         plane.mission.stop();
 
         bool restart = plane.mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND;

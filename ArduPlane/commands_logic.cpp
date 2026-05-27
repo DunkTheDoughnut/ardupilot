@@ -1029,7 +1029,7 @@ bool Plane::start_command_callback(const AP_Mission::Mission_Command &cmd)
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 bool Plane::verify_command_callback(const AP_Mission::Mission_Command& cmd)
 {
-    if (control_mode == &mode_auto) {
+    if (current_mode_requires_mission()) {
         bool cmd_complete = verify_command(cmd);
 
         // send message to GCS
@@ -1342,6 +1342,6 @@ bool Plane::is_land_command(uint16_t command) const
  */
 bool Plane::in_auto_mission_id(uint16_t command) const
 {
-    return control_mode == &mode_auto && mission.get_current_nav_id() == command;
+    return current_mode_requires_mission() && mission.get_current_nav_id() == command;
 }
 

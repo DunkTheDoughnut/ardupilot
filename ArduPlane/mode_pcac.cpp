@@ -1,6 +1,7 @@
 #include "mode.h"
 #include "Plane.h"
 
+#if AP_PCAC_ENABLED
 #define AP_PCAC_BANK_UPDATE_RATE 2
 #define AP_PCAC_BANK_PREVIEW_DELAY_DIST 0.0 //m
 #define AP_PCAC_BANK_MAX_PREVIEW 30
@@ -165,3 +166,4 @@ Matrix3f ModePcac::eulerOrientationMatrix(unitVector v,float theta){
     }
     return O;
 }
+#endif //AP_PCAC_ENABLED
