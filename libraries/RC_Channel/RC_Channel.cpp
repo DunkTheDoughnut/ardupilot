@@ -626,11 +626,13 @@ void RC_Channel::read_mode_switch()
 
 bool RC_Channel::debounce_completed(int8_t position)
 {
-    // switch change not detected
+#if AP_PCAC_ENABLED
+    return true;
+#else
     if (switch_state.current_position == position) {
         // reset debouncing
         switch_state.debounce_position = position;
-    } else {
+    } else { 
         // switch change detected
         const uint32_t tnow_ms = AP_HAL::millis();
 
@@ -644,8 +646,8 @@ bool RC_Channel::debounce_completed(int8_t position)
             return true;
         }
     }
-
     return false;
+#endif
 }
 
 //

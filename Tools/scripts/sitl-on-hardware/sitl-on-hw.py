@@ -48,9 +48,8 @@ parser.add_argument("--debug", action='store_true', default=False, help="create 
 parser.add_argument("--extra-hwdef", action='append', default=[], help="extra hwdef files")
 
 args, unknown_args = parser.parse_known_args()
-
 extra_hwdef = None
-
+print(f"Passing to waf: {unknown_args}")
 
 def run_program(cmd_list):
     '''run a program from a command list'''
@@ -177,7 +176,7 @@ def get_key_from_value(d, target_value):
 if args.vehicle in ["APMrover2", "apmrover2"]:  # Double map, but waf only accepts rover.
     args.vehicle = "Rover"
 waf_vehicle = args.vehicle if args.vehicle in vehicle_map.keys() else get_key_from_value(vehicle_map, args.vehicle)
-build_cmd = ["./waf", waf_vehicle.lower()]
+build_cmd = ["./waf", waf_vehicle.lower()] + unknown_args
 if args.upload:
     build_cmd.append("--upload")
 
