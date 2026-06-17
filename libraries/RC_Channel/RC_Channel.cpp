@@ -61,7 +61,7 @@ extern const AP_HAL::HAL& hal;
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_Parachute/AP_Parachute_config.h>
 #include <AP_Scripting/AP_Scripting.h>
-#define SWITCH_DEBOUNCE_TIME_MS  0
+#define SWITCH_DEBOUNCE_TIME_MS 1
 
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: MIN
@@ -626,28 +626,24 @@ void RC_Channel::read_mode_switch()
 
 bool RC_Channel::debounce_completed(int8_t position)
 {
-#if AP_PCAC_ENABLED
-    return true;
-#else
-    if (switch_state.current_position == position) {
-        // reset debouncing
-        switch_state.debounce_position = position;
-    } else { 
-        // switch change detected
-        const uint32_t tnow_ms = AP_HAL::millis();
+if (switch_state.current_position == position) {
+    // reset debouncing
+    switch_state.debounce_position = position;
+} else { 
+    // switch change detected
+    const uint32_t tnow_ms = AP_HAL::millis();
 
-        // position not established yet
-        if (switch_state.debounce_position != position) {
-            switch_state.debounce_position = position;
-            switch_state.last_edge_time_ms = tnow_ms;
-        } else if (tnow_ms - switch_state.last_edge_time_ms >= SWITCH_DEBOUNCE_TIME_MS) {
-            // position estabilished; debounce completed
-            switch_state.current_position = position;
-            return true;
-        }
+    // position not established yet
+    if (switch_state.debounce_position != position) {
+        switch_state.debounce_position = position;
+        switch_state.last_edge_time_ms = tnow_ms;
+    } else if (tnow_ms - switch_state.last_edge_time_ms >= SWITCH_DEBOUNCE_TIME_MS) {
+        // position estabilished; debounce completed
+        switch_state.current_position = position;
+        return true;
     }
-    return false;
-#endif
+}
+return false;
 }
 
 //
