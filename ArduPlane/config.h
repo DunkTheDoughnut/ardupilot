@@ -67,6 +67,10 @@
  # define FLIGHT_MODE_6                  Mode::Number::MANUAL
 #endif
 
+#ifndef AP_PCAC_ENABLED
+#define AP_PCAC_ENABLED 1
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////////
 // AUTO_TRIM

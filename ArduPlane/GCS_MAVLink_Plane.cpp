@@ -145,6 +145,7 @@ void GCS_MAVLINK_Plane::send_pcac_meas()
         plane.stabilize_pitch_get_pitch_out(),
         plane.stabilize_roll_get_roll_out(),
         plane.calc_nav_yaw_coordinated()
+        //plane.nav_controller->lateral_acceleration()
         );
 }
 #endif //AP_PCAC_ENABLED
@@ -1364,6 +1365,9 @@ uint8_t GCS_MAVLINK_Plane::send_available_mode(uint8_t index) const
 #endif
 #if MODE_AUTOLAND_ENABLED
         &plane.mode_autoland,
+#endif
+#if AP_PCAC_ENABLED
+        &plane.mode_pcac,
 #endif
     };
 

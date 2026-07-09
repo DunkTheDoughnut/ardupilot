@@ -61,7 +61,7 @@ extern const AP_HAL::HAL& hal;
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_Parachute/AP_Parachute_config.h>
 #include <AP_Scripting/AP_Scripting.h>
-#define SWITCH_DEBOUNCE_TIME_MS  0
+#define SWITCH_DEBOUNCE_TIME_MS 1
 
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: MIN
