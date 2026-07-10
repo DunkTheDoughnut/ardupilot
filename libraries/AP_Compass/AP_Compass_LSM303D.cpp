@@ -270,11 +270,12 @@ bool AP_Compass_LSM303D::init(enum Rotation rotation)
 
     /* register the compass instance in the frontend */
     _dev->set_device_type(DEVTYPE_LSM303D);
-    if (!register_compass(_dev->get_bus_id())) {
+    if (!register_compass(_dev->get_bus_id(), _compass_instance)) {
         return false;
     }
+    set_dev_id(_compass_instance, _dev->get_bus_id());
 
-    set_rotation(rotation);
+    set_rotation(_compass_instance, rotation);
 
     // read at 91Hz. We don't run at 100Hz as fetching data too fast can cause some very
     // odd periodic changes in the output data
@@ -342,7 +343,7 @@ void AP_Compass_LSM303D::_update()
 
     Vector3f raw_field = Vector3f(_mag_x, _mag_y, _mag_z) * _mag_range_scale;
 
-    accumulate_sample(raw_field, 10);
+    accumulate_sample(raw_field, _compass_instance, 10);
 }
 
 // Read Sensor data
@@ -352,7 +353,7 @@ void AP_Compass_LSM303D::read()
         return;
     }
 
-    drain_accumulated_samples();
+    drain_accumulated_samples(_compass_instance);
 }
 
 void AP_Compass_LSM303D::_disable_i2c()

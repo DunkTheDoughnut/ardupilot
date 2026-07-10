@@ -22,6 +22,8 @@
 
 #if AP_NOTIFY_LP5562_ENABLED
 
+#include <utility>
+
 #include <AP_HAL/AP_HAL.h>
 
 extern const AP_HAL::HAL& hal;
@@ -53,24 +55,10 @@ LP5562::LP5562(uint8_t bus, uint8_t addr)
 
 bool LP5562::init(void)
 {
-    _dev = hal.i2c_mgr->get_device_ptr(_bus, _addr);
+    _dev = std::move(hal.i2c_mgr->get_device(_bus, _addr));
     if (!_dev) {
         return false;
     }
-
-    if (!configure_dev()) {
-        delete _dev;
-        _dev = nullptr;
-        return false;
-    }
-
-    _dev->register_periodic_callback(20000, FUNCTOR_BIND_MEMBER(&LP5562::_timer, void));
-
-    return true;
-}
-
-bool LP5562::configure_dev()
-{
     WITH_SEMAPHORE(_dev->get_semaphore());
 
     _dev->set_retries(10);
@@ -116,6 +104,8 @@ bool LP5562::configure_dev()
     }
 
     _dev->set_retries(1);
+
+    _dev->register_periodic_callback(20000, FUNCTOR_BIND_MEMBER(&LP5562::_timer, void));
 
     return true;
 }

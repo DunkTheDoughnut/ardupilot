@@ -164,7 +164,7 @@ bool Morse::parse_sensors(const char *json)
         p += strlen(key.key)+3;
         switch (key.type) {
         case DATA_FLOAT:
-            *((float *)key.ptr) = strtof(p, nullptr);
+            *((float *)key.ptr) = atof(p);
             break;
 
         case DATA_DOUBLE:
@@ -237,7 +237,7 @@ bool Morse::parse_sensors(const char *json)
                     v->data = d;
                     v->length = n+1;
                 }
-                v->data[n] = strtof(p, nullptr);
+                v->data[n] = atof(p);
                 n++;
                 p = strchr(p,',');
                 if (!p) {

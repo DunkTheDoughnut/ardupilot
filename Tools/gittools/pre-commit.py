@@ -11,8 +11,8 @@ Use this by copying it to a file called $ARDUPILOT_ROOT/.git/hooks/pre-commit
 
 import os
 import re
-import subprocess
 import sys
+import subprocess
 
 
 class AP_PreCommit(object):

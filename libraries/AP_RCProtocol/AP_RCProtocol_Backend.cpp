@@ -35,7 +35,10 @@
 
 
 AP_RCProtocol_Backend::AP_RCProtocol_Backend(AP_RCProtocol &_frontend) :
-    frontend(_frontend)
+    frontend(_frontend),
+    rc_input_count(0),
+    last_rc_input_count(0),
+    _num_channels(0)
 {}
 
 bool AP_RCProtocol_Backend::new_input()

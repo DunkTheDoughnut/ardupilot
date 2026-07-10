@@ -61,13 +61,47 @@ static const uint8_t streamSequence[] = { 0 }; // List of 0 based stream Ids tha
 
 static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
+AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinder_State &_state,
+        AP_RangeFinder_Params &_params,
+        AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
+    : AP_RangeFinder_Backend(_state, _params)
+    , _dev(std::move(dev)) {}
+
+/*
+   Detects if a Lightware rangefinder is connected. We'll detect by
+   trying to take a reading on I2C. If we get a result the sensor is
+   there.
+*/
+AP_RangeFinder_Backend *AP_RangeFinder_LightWareI2C::detect(RangeFinder::RangeFinder_State &_state,
+        AP_RangeFinder_Params &_params,
+        AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
+{
+    if (!dev) {
+        return nullptr;
+    }
+
+    AP_RangeFinder_LightWareI2C *sensor
+        = NEW_NOTHROW AP_RangeFinder_LightWareI2C(_state, _params, std::move(dev));
+
+    if (!sensor) {
+        return nullptr;
+    }
+
+    WITH_SEMAPHORE(sensor->_dev->get_semaphore());
+    if (!sensor->init()) {
+        delete sensor;
+        return nullptr;
+    }
+    return sensor;
+}
+
 /**
  * Wrapper function over #transfer() to write a sequence of bytes to
  * device. No values are read.
  */
 bool AP_RangeFinder_LightWareI2C::write_bytes(uint8_t *write_buf_u8, uint32_t len_u8)
 {
-    return dev.transfer(write_buf_u8, len_u8, NULL, 0);
+    return _dev->transfer(write_buf_u8, len_u8, NULL, 0);
 }
 
 /**
@@ -107,7 +141,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
     }
 
     for (uint8_t i=0; i<10; i++) {
-        if (dev.read(rx_bytes, expected_reply_len)) {
+        if (_dev->read(rx_bytes, expected_reply_len)) {
             break;
         }
         // give a bit of time for the remaining bytes to be available
@@ -141,7 +175,7 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
     }
 
     for (uint8_t i=0; i<10; i++) {
-        if (dev.read(rx_bytes, expected_reply_len)) {
+        if (_dev->read(rx_bytes, expected_reply_len)) {
             break;
         }
         // give a bit of time for the remaining bytes to be available
@@ -156,8 +190,6 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
-    WITH_SEMAPHORE(dev.get_semaphore());
-
     if (sf20_init()) {
         DEV_PRINTF("Found SF20 native Lidar\n");
         return true;
@@ -182,7 +214,7 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
 
     // Retrieve lost signal timeout register
     const uint8_t read_reg = LIGHTWARE_LOST_SIGNAL_TIMEOUT_READ_REG;
-    if (!dev.transfer(&read_reg, 1, timeout.bytes, 2)) {
+    if (!_dev->transfer(&read_reg, 1, timeout.bytes, 2)) {
         return false;
     }
 
@@ -190,13 +222,13 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
     if (be16toh(timeout.be16_val) != LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE) {
         timeout.be16_val = htobe16(LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE);
         const uint8_t send_buf[3] = {LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG, timeout.bytes[0], timeout.bytes[1]};
-        if (!dev.transfer(send_buf, sizeof(send_buf), nullptr, 0)) {
+        if (!_dev->transfer(send_buf, sizeof(send_buf), nullptr, 0)) {
             return false;
         }
     }
 
     // call timer() at 20Hz
-    dev.register_periodic_callback(50000,
+    _dev->register_periodic_callback(50000,
                                      FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::legacy_timer, void));
 
     return true;
@@ -241,7 +273,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // been modified by this initialization process.
     // Address change to 0x65 = 101
     write_bytes((uint8_t*)"#CI,0x65\r\n",10);
-    dev.set_address(0x65);
+    _dev->set_address(0x65);
     uint8_t rx_bytes[lx20_max_reply_len_bytes + 1];
     sf20_wait_on_reply(rx_bytes);
     // Save the comm settings
@@ -302,7 +334,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     write_bytes((uint8_t*)init_stream_id[0], strlen(init_stream_id[0]));
 
     // call timer() at 20Hz
-    dev.register_periodic_callback(50000,
+    _dev->register_periodic_callback(50000,
                                      FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
 
     return true;
@@ -316,7 +348,7 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(float &reading_m)
     const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
 
     // read the high and low byte distance registers
-    if (dev.transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
+    if (_dev->transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
         int16_t signed_val = int16_t(be16toh(val));
         if (signed_val < 0) {
             // some lidar firmwares will return 65436 for out of range
@@ -340,7 +372,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(float &reading_m)
     size_t num_processed_chars = 0;
 
     /* Reads the LiDAR value requested during the last interrupt. */
-    if (!dev.read(stream, sizeof(stream))) {
+    if (!_dev->read(stream, sizeof(stream))) {
         return false;
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
@@ -463,7 +495,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
     const uint32_t max_wait_time_ms = 50;
 
     while (AP_HAL::millis() - start_time_ms < max_wait_time_ms) {
-        if (!dev.read(rx_two_byte, 2)) {
+        if (!_dev->read(rx_two_byte, 2)) {
             hal.scheduler->delay(1);
             continue;
         }

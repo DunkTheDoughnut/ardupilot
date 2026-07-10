@@ -16,6 +16,7 @@
 
 #if AP_BARO_BMP581_ENABLED
 
+#include <utility>
 #include <AP_Math/AP_Math.h>
 
 extern const AP_HAL::HAL &hal;
@@ -54,15 +55,20 @@ extern const AP_HAL::HAL &hal;
 #define BMP581_REG_OSR_EFF            0x38
 #define BMP581_REG_CMD                0x7E
 
-AP_Baro_BMP581::AP_Baro_BMP581(AP_Baro &baro, AP_HAL::Device &dev)
+AP_Baro_BMP581::AP_Baro_BMP581(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev)
     : AP_Baro_Backend(baro)
-    , _dev(&dev)
+    , _dev(std::move(dev))
 {
 }
 
-AP_Baro_Backend *AP_Baro_BMP581::probe(AP_Baro &baro, AP_HAL::Device &dev)
+AP_Baro_Backend *AP_Baro_BMP581::probe(AP_Baro &baro,
+                                       AP_HAL::OwnPtr<AP_HAL::Device> dev)
 {
-    AP_Baro_BMP581 *sensor = NEW_NOTHROW AP_Baro_BMP581(baro, dev);
+    if (!dev) {
+        return nullptr;
+    }
+
+    AP_Baro_BMP581 *sensor = NEW_NOTHROW AP_Baro_BMP581(baro, std::move(dev));
     if (!sensor || !sensor->init()) {
         delete sensor;
         return nullptr;
@@ -146,18 +152,8 @@ bool AP_Baro_BMP581::init()
 void AP_Baro_BMP581::timer(void)
 {
     uint8_t buf[6];
-    uint8_t buf2[6];
 
-    // read twice, make sure results are consistent; corruption has
-    // been seen from data on this sensor
     if (!_dev->read_registers(BMP581_REG_TEMP_DATA_XLSB, buf, sizeof(buf))) {
-        return;
-    }
-    if (!_dev->read_registers(BMP581_REG_TEMP_DATA_XLSB, buf2, sizeof(buf2))) {
-        return;
-    }
-    if (memcmp(buf, buf2, ARRAY_SIZE(buf)) != 0) {
-        // we didn't get the same data twice.  Reject.
         return;
     }
 

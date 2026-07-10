@@ -12,4 +12,4 @@ thread apply all bt full
 quit
 EOF
 gdb -n -batch -x $TMPFILE --pid $PID < /dev/null 2>&1
-rm -f $TMPFILE
+/bin/rm -f $TMPFILE

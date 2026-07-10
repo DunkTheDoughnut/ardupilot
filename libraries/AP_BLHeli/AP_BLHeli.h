@@ -192,7 +192,7 @@ private:
         uint8_t ack;
     } blheli;
 
-    static constexpr uint16_t esc_status_addr = 0xEB00;
+    const uint16_t esc_status_addr = 0xEB00;
     
     // protocol reported by ESC in esc_status
     enum esc_protocol {

@@ -16,7 +16,6 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_Vehicle/AP_FixedWing.h>
 #include <SRV_Channel/SRV_Channel.h>
-#include <AP_Arming/AP_Arming.h>
 
 #include "LogReader.h"
 
@@ -61,7 +60,7 @@ public:
 
     SRV_Channels servo_channels;
 
-    AP_Arming arming;
+protected:
 
 protected:
 

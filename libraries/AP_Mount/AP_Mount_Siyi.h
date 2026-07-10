@@ -282,16 +282,13 @@ private:
     // Returns true if message successfully sent to Gimbal
     bool set_motion_mode(const GimbalMotionMode mode, const bool force=false);
 
-    // Siyi can send either rates or angles
-    uint8_t natively_supported_mount_target_types() const override {
-        return NATIVE_ANGLES_AND_RATES_ONLY;
-    };
-
     // send target pitch and yaw rates to gimbal
-    void send_target_rates(const MountRateTarget &rate_rads) override;
+    // yaw_is_ef should be true if yaw_rads target is an earth frame rate, false if body_frame
+    void send_target_rates(float pitch_rads, float yaw_rads, bool yaw_is_ef);
 
     // send target pitch and yaw angles to gimbal
-    void send_target_angles(const MountAngleTarget &angle_rad) override;
+    // yaw_is_ef should be true if yaw_rad target is an earth frame angle, false if body_frame
+    void send_target_angles(float pitch_rad, float yaw_rad, bool yaw_is_ef);
 
     // send zoom rate command to camera. zoom out = -1, hold = 0, zoom in = 1
     bool send_zoom_rate(float zoom_value);
@@ -324,7 +321,7 @@ private:
     // buffer holding bytes from latest packet.  This is only used to calculate the crc
     uint8_t _msg_buff[AP_MOUNT_SIYI_PACKETLEN_MAX];
     uint8_t _msg_buff_len;
-    static constexpr uint8_t _msg_buff_data_start = 8;         // data starts at this byte of _msg_buff
+    const uint8_t _msg_buff_data_start = 8;         // data starts at this byte of _msg_buff
 
     // parser state and unpacked fields
     struct PACKED {

@@ -16,27 +16,27 @@ void Copter::failsafe_radio_on_event()
 
     // set desired action based on FS_THR_ENABLE parameter
     FailsafeAction desired_action;
-    switch ((FS_THR_Action)g.failsafe_throttle) {
-        case FS_THR_Action::DISABLED:
+    switch (g.failsafe_throttle) {
+        case FS_THR_DISABLED:
             desired_action = FailsafeAction::NONE;
             break;
-        case FS_THR_Action::ALWAYS_RTL:
-        case FS_THR_Action::CONTINUE_MISSION:
+        case FS_THR_ENABLED_ALWAYS_RTL:
+        case FS_THR_ENABLED_CONTINUE_MISSION:
             desired_action = FailsafeAction::RTL;
             break;
-        case FS_THR_Action::ALWAYS_SMARTRTL_OR_RTL:
+        case FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_RTL:
             desired_action = FailsafeAction::SMARTRTL;
             break;
-        case FS_THR_Action::ALWAYS_SMARTRTL_OR_LAND:
+        case FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND:
             desired_action = FailsafeAction::SMARTRTL_LAND;
             break;
-        case FS_THR_Action::ALWAYS_LAND:
+        case FS_THR_ENABLED_ALWAYS_LAND:
             desired_action = FailsafeAction::LAND;
             break;
-        case FS_THR_Action::AUTO_RTL_OR_RTL:
+        case FS_THR_ENABLED_AUTO_RTL_OR_RTL:
             desired_action = FailsafeAction::AUTO_DO_LAND_START;
             break;
-        case FS_THR_Action::BRAKE_OR_LAND:
+        case FS_THR_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
             break;
         default:
@@ -126,7 +126,7 @@ void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)
 void Copter::failsafe_gcs_check()
 {
     // Bypass GCS failsafe checks if disabled or GCS never connected
-    if (g.failsafe_gcs == FS_GCS_Action::DISABLED) {
+    if (g.failsafe_gcs == FS_GCS_DISABLED) {
         return;
     }
 
@@ -167,27 +167,27 @@ void Copter::failsafe_gcs_on_event(void)
 
     // convert the desired failsafe response to the FailsafeAction enum
     FailsafeAction desired_action;
-    switch ((FS_GCS_Action)g.failsafe_gcs) {
-        case FS_GCS_Action::DISABLED:
+    switch (g.failsafe_gcs) {
+        case FS_GCS_DISABLED:
             desired_action = FailsafeAction::NONE;
             break;
-        case FS_GCS_Action::ALWAYS_RTL:
-        case FS_GCS_Action::CONTINUE_MISSION:
+        case FS_GCS_ENABLED_ALWAYS_RTL:
+        case FS_GCS_ENABLED_CONTINUE_MISSION:
             desired_action = FailsafeAction::RTL;
             break;
-        case FS_GCS_Action::ALWAYS_SMARTRTL_OR_RTL:
+        case FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_RTL:
             desired_action = FailsafeAction::SMARTRTL;
             break;
-        case FS_GCS_Action::ALWAYS_SMARTRTL_OR_LAND:
+        case FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_LAND:
             desired_action = FailsafeAction::SMARTRTL_LAND;
             break;
-        case FS_GCS_Action::ALWAYS_LAND:
+        case FS_GCS_ENABLED_ALWAYS_LAND:
             desired_action = FailsafeAction::LAND;
             break;
-        case FS_GCS_Action::AUTO_RTL_OR_RTL:
+        case FS_GCS_ENABLED_AUTO_RTL_OR_RTL:
             desired_action = FailsafeAction::AUTO_DO_LAND_START;
             break;
-        case FS_GCS_Action::BRAKE_OR_LAND:
+        case FS_GCS_ENABLED_BRAKE_OR_LAND:
             desired_action = FailsafeAction::BRAKE_LAND;
             break;
         default: // if an invalid parameter value is set, the fallback is RTL
@@ -281,18 +281,7 @@ void Copter::failsafe_terrain_set_status(bool data_ok)
 void Copter::failsafe_terrain_on_event()
 {
     failsafe.terrain = true;
-    switch (wp_nav->get_terrain_source()) {
-    case AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE:
-        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain %s", "data missing");
-        break;
-    case AC_WPNav::TerrainSource::TERRAIN_FROM_RANGEFINDER:
-        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain %s", "Rangefinder Unhealthy");
-        break;
-    case AC_WPNav::TerrainSource::TERRAIN_UNAVAILABLE:
-        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain %s", "Unavailable");
-        break;
-    }
-
+    gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing");
     LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_TERRAIN, LogErrorCode::FAILSAFE_OCCURRED);
 
     if (should_disarm_on_failsafe()) {
@@ -367,7 +356,7 @@ void Copter::failsafe_deadreckon_check()
         failsafe.deadreckon = ekf_dead_reckoning;
 
         // only take action in modes requiring position estimate
-        if (failsafe.deadreckon && copter.flightmode->requires_position()) {
+        if (failsafe.deadreckon && copter.flightmode->requires_GPS()) {
 
             // log error
             LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_DEADRECKON, LogErrorCode::FAILSAFE_OCCURRED);

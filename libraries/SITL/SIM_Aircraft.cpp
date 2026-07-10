@@ -50,7 +50,8 @@ Aircraft *Aircraft::instances[MAX_SIM_INSTANCES];
   parent class for all simulator types
  */
 
-Aircraft::Aircraft(const char *frame_str)
+Aircraft::Aircraft(const char *frame_str) :
+    frame(frame_str)
 {
     // make the SIM_* variables available to simulator backends
     sitl = AP::sitl();
@@ -123,17 +124,7 @@ float Aircraft::ground_height_difference() const
     return local_ground_level;
 }
 
-float Aircraft::ambient_outside_temperature_degC() const
-{
-    // FIXME: stop applying autopilot warming to this value
-    return baro_temperature_degC();
-}
-
-// the ambient temperature for the autopilot baro sensors, *not* the
-// ambient temperature for the outside of the vehicle.  This
-// temperature is adjusted for things like the simulated board heating
-// up
-float Aircraft::baro_temperature_degC() const
+float Aircraft::ambient_temperature_degC() const
 {
     // FIXME: AP_Baro_SITL should be getting temperature from the
     // simulated aircraft, not the other way around!
@@ -141,15 +132,6 @@ float Aircraft::baro_temperature_degC() const
     return AP::baro().get_temperature();
 #endif
     return 25.0;
-}
-
-// returns the expected ambient pressure for the vehicle.  So pressure
-// drops preceived by the sensors due to airflow should not be
-// included in this number.
-float Aircraft::ambient_outside_pressure_Pascal() const
-{
-    // FIXME: this includes airflow-related things
-    return AP::baro().get_pressure();
 }
 
 void Aircraft::set_precland(SIM_Precland *_precland) {
@@ -396,11 +378,6 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm)
         is_smoothed = true;
     }
     fdm.timestamp_us = time_now_us;
-    // keep track of the number of frames processed so that the IMUs can follow
-    if (flightaxis_sync_imus_to_frames) {
-        fdm.flightaxis_imu_frame_num++;
-    }
-
     if (fdm.home.lat == 0 && fdm.home.lng == 0) {
         // initialise home
         fdm.home = home;
@@ -1034,12 +1011,7 @@ void Aircraft::smooth_sensors(void)
  */
 float Aircraft::filtered_servo_angle(const struct sitl_input &input, uint8_t idx)
 {
-    uint16_t pwm =  input.servos[idx];
-    if (pwm == 0) {
-        // invalid input, servo does not move, apply current value.
-        // glad we have a zero-momentum system.
-        pwm = servo_filter[idx].angle_pwm();
-    }
+    uint16_t pwm = input.servos[idx] == 0 ? 1500 : input.servos[idx];
     return servo_filter[idx].filter_angle(pwm, frame_time_us * 1.0e-6);
 }
 
@@ -1182,7 +1154,7 @@ void Aircraft::update_external_payload(const struct sitl_input &input)
 #if AP_SIM_LOWEHEISER_ENABLED
     // update Loweheiser generator
     if (loweheiser) {
-        loweheiser->update(*this);
+        loweheiser->update();
     }
 #endif
 
@@ -1222,14 +1194,6 @@ void Aircraft::update_external_payload(const struct sitl_input &input)
 #endif
 #if AP_SIM_GPIO_LED_RGB_ENABLED
     sim_ledrgb.update(*this);
-#endif
-
-#if AP_SIM_MOUNT_ENABLED
-    for (uint8_t i = 0; i < GIMBAL_SIM_MAX; i++) {
-        if (gimbal_sims[i] != nullptr) {
-            gimbal_sims[i]->update(*this);
-        }
-    }
 #endif
 }
 

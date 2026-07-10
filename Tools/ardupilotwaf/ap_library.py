@@ -199,7 +199,9 @@ class ap_library_check_headers(Task.Task):
         bld = self.generator.bld
         # force scan() to be called
         bld.imp_sigs[self.uid()] = None
-        return super(ap_library_check_headers, self).signature()
+        s = super(ap_library_check_headers, self).signature()
+        bld.ap_persistent_task_sigs[self.uid()] = s
+        return s
 
     def scan(self):
         r = []

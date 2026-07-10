@@ -60,6 +60,10 @@ extern AP_IOMCU iomcu;
 
 using namespace ChibiOS;
 
+#ifndef HAL_RCIN_THREAD_ENABLED
+#define HAL_RCIN_THREAD_ENABLED 1
+#endif
+
 #ifndef HAL_MONITOR_THREAD_ENABLED
 #define HAL_MONITOR_THREAD_ENABLED 1
 #endif

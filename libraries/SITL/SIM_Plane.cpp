@@ -409,6 +409,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     elevator = -elevator;
 #endif
     bool launch_triggered = input.servos[6] > 1700;
+    float throttle;
     if (reverse_elevator_rudder) {
         elevator = -elevator;
         rudder = -rudder;
@@ -451,7 +452,16 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     }
     //printf("Aileron: %.1f elevator: %.1f rudder: %.1f\n", aileron, elevator, rudder);
 
-    float thrust = reverse_thrust ? filtered_servo_angle(input, 2) : filtered_servo_range(input, 2);
+    if (reverse_thrust) {
+        throttle = filtered_servo_angle(input, 2);
+    } else {
+        throttle = filtered_servo_range(input, 2);
+    }
+    
+    float thrust     = throttle;
+
+    battery_voltage = sitl->batt_voltage - 0.7*throttle;
+    battery_current = (battery_voltage/sitl->batt_voltage)*50.0f*sq(throttle);
 
     if (ice_engine) {
         thrust = icengine.update(input);
@@ -524,11 +534,7 @@ void Plane::update(const struct sitl_input &input)
     update_wind(input);
     
     calculate_forces(input, rot_accel);
-
-    float throttle = reverse_thrust ? filtered_servo_angle(input, 2) : filtered_servo_range(input, 2);
-    battery_voltage = sitl->batt_voltage - 0.7*throttle;
-    battery_current = (battery_voltage/sitl->batt_voltage)*50.0f*sq(throttle);
-
+    
     update_dynamics(rot_accel);
 
     /*

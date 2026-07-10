@@ -39,7 +39,7 @@ public:
 
     using SerialDevice::SerialDevice;
 
-    void update(const class Aircraft &aircraft);
+    void update();
 
 private:
     void send_table();

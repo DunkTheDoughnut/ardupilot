@@ -6,6 +6,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/I2CDevice.h>
+#include <AP_HAL/utility/OwnPtr.h>
 #include <Filter/Filter.h>
 
 #ifndef HAL_BARO_BMP085_I2C_ADDR
@@ -14,12 +15,12 @@
 
 class AP_Baro_BMP085 : public AP_Baro_Backend {
 public:
-    AP_Baro_BMP085(AP_Baro &baro, AP_HAL::Device &dev);
+    AP_Baro_BMP085(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev);
 
     /* AP_Baro public interface: */
     void update() override;
 
-    static AP_Baro_Backend *probe(AP_Baro &baro, AP_HAL::Device &dev);
+    static AP_Baro_Backend *probe(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev);
 
 
 private:
@@ -38,7 +39,7 @@ private:
     bool     _read_prom(uint16_t *prom);
 
 
-    AP_HAL::Device *_dev;
+    AP_HAL::OwnPtr<AP_HAL::Device> _dev;
     AP_HAL::DigitalSource *_eoc;
 
     uint8_t _instance;

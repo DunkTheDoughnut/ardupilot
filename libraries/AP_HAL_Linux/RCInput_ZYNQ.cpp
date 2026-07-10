@@ -1,7 +1,5 @@
 #include "RCInput_ZYNQ.h"
 
-#if AP_RCPROTOCOL_ZYNQ_ENABLED
-
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -18,7 +16,9 @@
 
 #include "GPIO.h"
 
-#ifndef RCIN_ZYNQ_PULSE_INPUT_BASE
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OCPOC_ZYNQ
+#define RCIN_ZYNQ_PULSE_INPUT_BASE  0x43ca0000
+#else
 #define RCIN_ZYNQ_PULSE_INPUT_BASE  0x43c10000
 #endif
 
@@ -55,5 +55,3 @@ void RCInput_ZYNQ::_timer_tick()
             _process_rc_pulse(_s0_time, (v & 0x7fffffff)/TICK_PER_US);
     }
 }
-
-#endif  // AP_RCPROTOCOL_ZYNQ_ENABLED

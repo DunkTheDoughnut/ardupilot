@@ -114,7 +114,6 @@ GTAGS
 .gdbinit
 .vscode/*
 !.vscode/extensions.json
-.cache/
 /.history
 Parameters.html
 Parameters.md

@@ -5,8 +5,7 @@ undef PE0
 undef PE1
 undef PC12
 undef AP_PERIPH_IMU_ENABLED
-
-define AP_MAVLINKCAN_ENABLED 1
+undef HAL_GCS_ENABLED
 
 # disable IMU
 def AP_PERIPH_IMU_ENABLED 0
@@ -38,5 +37,3 @@ include ../include/network_PPPGW.inc
 define AP_NETWORKING_TESTS_ENABLED 1
 
 define HAL_PERIPH_SHOW_SERIAL_MANAGER_PARAMS 1
-
-define DEFAULT_SERIAL1_PROTOCOL SerialProtocol_PPP

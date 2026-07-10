@@ -20,12 +20,6 @@
 #include <AP_HAL/SPIDevice.h>
 #include "AP_HAL_ESP32.h"
 
-#ifndef AP_HAL_SPI_ENABLED
-#define AP_HAL_SPI_ENABLED defined(HAL_ESP32_SPI_BUSES) || defined (HAL_ESP32_SDSPI)
-#endif  // AP_HAL_SPI_ENABLED
-
-#if AP_HAL_SPI_ENABLED
-
 #include "Semaphores.h"
 #include "Scheduler.h"
 #include "DeviceBus.h"
@@ -93,7 +87,6 @@ private:
     void acquire_bus(bool accuire);
 };
 
-#if defined(HAL_ESP32_SPI_BUSES)
 class SPIDeviceManager : public AP_HAL::SPIDeviceManager
 {
 public:
@@ -104,8 +97,5 @@ public:
 private:
     SPIBus *buses;
 };
-#endif  // HAL_ESP32_SPI_BUSES
+}
 
-} // end of namespace ESP32
-
-#endif  // AP_HAL_SPI_ENABLED

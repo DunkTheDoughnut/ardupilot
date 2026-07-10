@@ -18,6 +18,8 @@
 
 #if AP_RANGEFINDER_BENEWAKE_TFMINIPLUS_ENABLED
 
+#include <utility>
+
 #include <GCS_MAVLink/GCS.h>
 #include <AP_HAL/AP_HAL.h>
 
@@ -36,6 +38,34 @@ extern const AP_HAL::HAL& hal;
  * uint8_t checksum;
  */
 
+AP_RangeFinder_Benewake_TFMiniPlus::AP_RangeFinder_Benewake_TFMiniPlus(
+        RangeFinder::RangeFinder_State &_state,
+        AP_RangeFinder_Params &_params,
+        AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
+    : AP_RangeFinder_Backend(_state, _params)
+    , _dev(std::move(dev))
+{
+}
+
+AP_RangeFinder_Backend *AP_RangeFinder_Benewake_TFMiniPlus::detect(
+        RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params,
+        AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
+{
+    if (!dev) {
+        return nullptr;
+    }
+
+    AP_RangeFinder_Benewake_TFMiniPlus *sensor
+        = NEW_NOTHROW AP_RangeFinder_Benewake_TFMiniPlus(_state, _params, std::move(dev));
+
+    if (!sensor || !sensor->init()) {
+        delete sensor;
+        return nullptr;
+    }
+
+    return sensor;
+}
+
 bool AP_RangeFinder_Benewake_TFMiniPlus::init()
 {
     const uint8_t CMD_FW_VERSION[] =         { 0x5A, 0x04, 0x01, 0x5F };
@@ -53,53 +83,59 @@ bool AP_RangeFinder_Benewake_TFMiniPlus::init()
     uint8_t val[12], i;
     bool ret;
 
-    WITH_SEMAPHORE(dev.get_semaphore());
+    _dev->get_semaphore()->take_blocking();
 
-    dev.set_retries(0);
+    _dev->set_retries(0);
 
     /*
      * Check we get a response for firmware version to detect if sensor is there
      */
-    ret = dev.transfer(CMD_FW_VERSION, sizeof(CMD_FW_VERSION), nullptr, 0);
+    ret = _dev->transfer(CMD_FW_VERSION, sizeof(CMD_FW_VERSION), nullptr, 0);
     if (!ret) {
-        return false;
+        goto fail;
     }
 
     hal.scheduler->delay(100);
 
-    ret = dev.transfer(nullptr, 0, val, 7);
+    ret = _dev->transfer(nullptr, 0, val, 7);
     if (!ret || val[0] != 0x5A || val[1] != 0x07 || val[2] != 0x01 ||
         !check_checksum(val, 7)) {
-        return false;
+        goto fail;
     }
 
     if (val[5] * 10000 + val[4] * 100 + val[3] < 20003) {
         GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "TFMini: FW ver %u.%u.%u (need>=2.0.3)",
                             (unsigned)val[5],(unsigned)val[4],(unsigned)val[3]);
-        return false;
+        goto fail;
     }
 
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "TFMiniPlus: found fw version %u.%u.%u\n",
+    DEV_PRINTF(DRIVER ": found fw version %u.%u.%u\n",
                         val[5], val[4], val[3]);
 
     for (i = 0; i < ARRAY_SIZE(cmds); i++) {
-        ret = dev.transfer(cmds[i], cmds[i][1], nullptr, 0);
+        ret = _dev->transfer(cmds[i], cmds[i][1], nullptr, 0);
         if (!ret) {
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "TFMiniPlus: Unable to set configuration register %u\n",
+            DEV_PRINTF(DRIVER ": Unable to set configuration register %u\n",
                                 cmds[i][2]);
-            return false;
+            goto fail;
         }
         hal.scheduler->delay(100);
     }
 
-    dev.transfer(CMD_SYSTEM_RESET, sizeof(CMD_SYSTEM_RESET), nullptr, 0);
+    _dev->transfer(CMD_SYSTEM_RESET, sizeof(CMD_SYSTEM_RESET), nullptr, 0);
+
+    _dev->get_semaphore()->give();
 
     hal.scheduler->delay(100);
 
-    dev.register_periodic_callback(20000,
+    _dev->register_periodic_callback(20000,
                                      FUNCTOR_BIND_MEMBER(&AP_RangeFinder_Benewake_TFMiniPlus::timer, void));
 
     return true;
+
+fail:
+    _dev->get_semaphore()->give();
+    return false;
 }
 
 void AP_RangeFinder_Benewake_TFMiniPlus::update()
@@ -169,8 +205,8 @@ void AP_RangeFinder_Benewake_TFMiniPlus::timer()
     bool ret;
     uint16_t distance;
 
-    ret = dev.transfer(CMD_READ_MEASUREMENT, sizeof(CMD_READ_MEASUREMENT), nullptr, 0);
-    if (!ret || !dev.transfer(nullptr, 0, (uint8_t *)&u, sizeof(u))) {
+    ret = _dev->transfer(CMD_READ_MEASUREMENT, sizeof(CMD_READ_MEASUREMENT), nullptr, 0);
+    if (!ret || !_dev->transfer(nullptr, 0, (uint8_t *)&u, sizeof(u))) {
         return;
     }
 

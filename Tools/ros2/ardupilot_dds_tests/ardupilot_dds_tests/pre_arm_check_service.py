@@ -20,9 +20,8 @@ Run pre_arm check test on Copter.
 Warning - This is NOT production code; it's a simple demo of capability.
 """
 
-import time
-
 import rclpy
+import time
 
 from rclpy.node import Node
 from std_srvs.srv import Trigger

@@ -73,7 +73,7 @@ ELSEIF(${ARDUPILOT_CMD} STREQUAL "sub")
 ENDIF()
 
 add_custom_target(showinc ALL
-        COMMAND echo
+        COMMAND echo -e
         "$<TARGET_PROPERTY:${elf_file},INCLUDE_DIRECTORIES>"
         > includes.list
     VERBATIM

@@ -4,21 +4,19 @@ about: If you are sure you have found a bug, then choose this to open a bug repo
 
 ---
 
-# Bug Report
-
 **IF YOU DON'T REMOVE THESE FOUR LINES, THEN YOUR REPORT WILL BE CLOSED AUTOMATICALLY**
-Questions and user problems should be directed at the [ArduPilot forum](http://discuss.ardupilot.org)
+Questions and user problems should be directed at the forum (http://discuss.ardupilot.org)
 _**Please be very sure you have found a bug when opening this issue**_
 If there was a previous discussion in the forum, link to it
 
 ## Bug report
 
-### Issue details
+**Issue details**
 
-Please describe the problem
+_Please describe the problem_
 
 **Version**
-What version was the issue encountered with
+_What version was the issue encountered with_
 
 **Platform**
 [  ] All

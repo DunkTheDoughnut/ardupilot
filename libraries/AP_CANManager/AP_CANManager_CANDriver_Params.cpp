@@ -43,7 +43,7 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
 
     // index 4 was CANTester
 
-#if AP_PICCOLOCAN_ENABLED
+#if HAL_PICCOLO_CAN_ENABLE
     // @Group: PC_
     // @Path: ../AP_PiccoloCAN/AP_PiccoloCAN.cpp
     AP_SUBGROUPPTR(_piccolocan, "PC_", 5, AP_CANManager::CANDriver_Params, AP_PiccoloCAN),

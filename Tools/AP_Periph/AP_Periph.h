@@ -41,8 +41,6 @@
 #include "rc_in.h"
 #include "batt_balance.h"
 #include "battery_tag.h"
-#include "battery_bms.h"
-#include "actuator_telem.h"
 #include "networking.h"
 #include "serial_options.h"
 #if AP_SIM_ENABLED
@@ -114,13 +112,6 @@
  * HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_NON_DEBUG in hwdef.dat
  */
 #undef HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT
-#endif
-
-#if AP_SERVO_TELEM_ENABLED
-    #include <AP_Servo_Telem/AP_Servo_Telem.h>
-    #if !AP_PERIPH_RC_OUT_ENABLED
-      #error"'AP_SERVO_TELEM_ENABLED' requires `AP_PERIPH_RC_OUT_ENABLED`"
-    #endif
 #endif
 
 #include "Parameters.h"
@@ -386,16 +377,6 @@ public:
     void rcout_handle_safety_state(uint8_t safety_state);
 #endif
 
-#if AP_SERVO_TELEM_ENABLED
-    void servo_telem_update();
-    struct {
-        AP_Servo_Telem lib;
-        uint32_t last_update_ms;
-        uint32_t last_send_ms;
-        uint8_t last_send_index;
-    } servo_telem;
-#endif
-
 #if AP_PERIPH_RCIN_ENABLED
     void rcin_init();
     void rcin_update();
@@ -413,14 +394,6 @@ public:
 
 #if AP_PERIPH_BATTERY_TAG_ENABLED
     BatteryTag battery_tag;
-#endif
-
-#if AP_PERIPH_BATTERY_BMS_ENABLED
-    BatteryBMS battery_bms;
-#endif
-
-#if AP_PERIPH_ACTUATOR_TELEM_ENABLED
-    ActuatorTelem actuator_telem;
 #endif
     
 #if AP_PERIPH_SERIAL_OPTIONS_ENABLED
@@ -444,11 +417,15 @@ public:
     AP_Notify notify;
     uint64_t vehicle_state = 1; // default to initialisation
     float yaw_earth;
-    uint32_t last_vehicle_state_ms;
+    uint32_t last_vehicle_state;
 
     // Handled under LUA script to control LEDs
     float get_yaw_earth() { return yaw_earth; }
-    uint64_t get_vehicle_state() { return vehicle_state; }
+    uint32_t get_vehicle_state() { return vehicle_state; }
+#elif defined(AP_SCRIPTING_ENABLED)
+    // create dummy methods for the case when the user doesn't want to use the notify object
+    float get_yaw_earth() { return 0.0; }
+    uint32_t get_vehicle_state() { return 0.0; }
 #endif
 
 #if AP_SCRIPTING_ENABLED

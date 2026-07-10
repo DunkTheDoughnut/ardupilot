@@ -20,7 +20,7 @@
 #include <chrono>
 #include <stdlib.h>
 
-#include "libAP_JSON.h"
+#include "libAP_JSON.cpp"
 
 uint16_t servo_out[16];
 

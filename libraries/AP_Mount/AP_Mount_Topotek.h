@@ -106,11 +106,6 @@ protected:
     // get attitude as a quaternion.  returns true on success
     bool get_attitude_quaternion(Quaternion& att_quat) override;
 
-    // Topotek can send either rates or angles
-    uint8_t natively_supported_mount_target_types() const override {
-        return NATIVE_ANGLES_AND_RATES_ONLY;
-    };
-
 private:
 
     // header type (fixed or variable length)
@@ -159,8 +154,7 @@ private:
     enum class TrackingStatus : uint8_t {
         STOPPED_TRACKING = 0x30,                // not tracking
         WAITING_FOR_TRACKING = 0x31,            // wait to track command status
-        TRACKING_IN_PROGRESS = 0x32,            // the status is being tracked
-        LENS_UNSUPPORT_TRACK = 0x34,            // this lens does not support tracking
+        TRACKING_IN_PROGRESS = 0x32             // the status is being tracked.
     };
 
     // identifier bytes
@@ -188,10 +182,10 @@ private:
     void request_gimbal_model_name();
 
     // send angle target in radians to gimbal
-    void send_target_angles(const MountAngleTarget& angle_rad) override;
+    void send_angle_target(const MountTarget& angle_rad);
 
     // send rate target in rad/s to gimbal
-    void send_target_rates(const MountRateTarget& rate_rads) override;
+    void send_rate_target(const MountTarget& rate_rads);
 
     // send time and date to gimbal
     bool send_time_to_gimbal();
@@ -226,6 +220,10 @@ private:
     // hexadecimal to character conversion
     uint8_t hex2char(uint8_t data) const;
 
+    // convert a 4 character hex number to an integer
+    // the characters are in the format "1234" where the most significant digit is first
+    int16_t hexchar4_to_int16(char high, char mid_high, char mid_low, char low) const;
+
     // send a fixed length packet to gimbal
     // returns true on success, false if serial port initialization failed
     bool send_fixedlen_packet(AddressByte address, const Identifier id, bool write, uint8_t value);
@@ -250,7 +248,7 @@ private:
     bool _got_gimbal_model_name;                                // true if gimbal's model name has been received
     bool _last_zoom_stop;                                       // true if zoom has been stopped (used to re-send in order to handle lost packets)
     bool _last_focus_stop;                                      // true if focus has been stopped (used to re-sent in order to handle lost packets)
-    char _model_name[16];                                       // gimbal model name, always null-terminated
+    uint8_t _model_name[16];                                    // gimbal model name
     uint8_t _sent_time_count;                                   // count of current time messages sent to gimbal
     uint32_t _firmware_ver;                                     // firmware version
     Vector3f _current_angle_rad;                                // current angles in radians received from gimbal (x=roll, y=pitch, z=yaw)

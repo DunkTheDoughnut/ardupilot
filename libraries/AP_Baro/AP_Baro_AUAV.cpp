@@ -16,17 +16,24 @@
 
 #if AP_BARO_AUAV_ENABLED
 
+#include <utility>
+
 extern const AP_HAL::HAL &hal;
 
-AP_Baro_AUAV::AP_Baro_AUAV(AP_Baro &baro, AP_HAL::Device *_dev)
+AP_Baro_AUAV::AP_Baro_AUAV(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> _dev)
     : AP_Baro_Backend(baro)
-    , dev(_dev)
+    , dev(std::move(_dev))
 {
+    i2c_dev = (AP_HAL::I2CDevice*)dev.get();
 }
 
-AP_Baro_Backend *AP_Baro_AUAV::probe(AP_Baro &baro, AP_HAL::Device &_dev)
+AP_Baro_Backend *AP_Baro_AUAV::probe(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> _dev)
 {
-    AP_Baro_AUAV *sensor = NEW_NOTHROW AP_Baro_AUAV(baro, &_dev);
+    if (!_dev) {
+        return nullptr;
+    }
+
+    AP_Baro_AUAV *sensor = NEW_NOTHROW AP_Baro_AUAV(baro, std::move(_dev));
     if (!sensor || !sensor->init()) {
         delete sensor;
         return nullptr;
@@ -36,14 +43,14 @@ AP_Baro_Backend *AP_Baro_AUAV::probe(AP_Baro &baro, AP_HAL::Device &_dev)
 
 bool AP_Baro_AUAV::init()
 {
-    if (!dev) {
+    if (!i2c_dev) {
         return false;
     }
 
     {
         // Take semaphore for i2c functions
-        WITH_SEMAPHORE(dev->get_semaphore());
-        dev->set_retries(10);
+        WITH_SEMAPHORE(i2c_dev->get_semaphore());
+        i2c_dev->set_retries(10);
 
         // Request a measurement
         if (!sensor.measure()) {
@@ -60,10 +67,10 @@ bool AP_Baro_AUAV::init()
 
     // Register sensor and set dev-id
     instance = _frontend.register_sensor();
-    dev->set_device_type(DEVTYPE_BARO_AUAV);
-    set_bus_id(instance, dev->get_bus_id());
+    i2c_dev->set_device_type(DEVTYPE_BARO_AUAV);
+    set_bus_id(instance, i2c_dev->get_bus_id());
 
-    dev->register_periodic_callback(40000,
+    i2c_dev->register_periodic_callback(40000,
                                      FUNCTOR_BIND_MEMBER(&AP_Baro_AUAV::timer, void));
 
     return true;

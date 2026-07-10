@@ -3,8 +3,6 @@
 
 #include "RCOutput_ZYNQ.h"
 
-#if AP_RCOUTPUT_ZYNQ_ENABLED
-
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/spi/spidev.h>
@@ -132,5 +130,3 @@ void RCOutput_ZYNQ::push(void)
     }
     pending_mask = 0;
 }
-
-#endif  // AP_RCOUTPUT_ZYNQ_ENABLED

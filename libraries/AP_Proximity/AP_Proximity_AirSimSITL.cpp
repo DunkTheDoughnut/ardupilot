@@ -37,7 +37,7 @@ void AP_Proximity_AirSimSITL::update(void)
     frontend.boundary.reset();
 
     // precalculate sq of min distance
-    const float distance_min_sq = sq(distance_min_m());
+    const float distance_min_sq = sq(distance_min());
 
     // variables used to reduce data sent to object database
     const float accuracy_sq = sq(PROXIMITY_ACCURACY);
@@ -78,12 +78,12 @@ void AP_Proximity_AirSimSITL::update(void)
 }
 
 // get maximum and minimum distances (in meters) of primary sensor
-float AP_Proximity_AirSimSITL::distance_max_m() const
+float AP_Proximity_AirSimSITL::distance_max() const
 {
     return PROXIMITY_MAX_RANGE;
 }
 
-float AP_Proximity_AirSimSITL::distance_min_m() const
+float AP_Proximity_AirSimSITL::distance_min() const
 {
     return 0.0f;
 }

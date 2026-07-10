@@ -39,12 +39,12 @@ public:
 
     using SerialDevice::SerialDevice;
 
-    void update(const class Aircraft &aircraft);
+    void update();
 
 private:
 
     void update_receive();
-    void update_send(const class Aircraft &aircraft);
+    void update_send();
 
     void assert_receive_size(uint8_t receive_size);
 
@@ -80,7 +80,7 @@ private:
         }
     };
 
-    void send_record1(const class Aircraft &aircraft);
+    void send_record1();
     void send_record2();
     void send_record3();
 
@@ -225,11 +225,11 @@ private:
 
     uint16_t engine_status_field_value() const;
 
-    void init(const class Aircraft &aircraft);
+    void init();
     bool init_done = false;
 
     // engine model:
-    void update_engine_model(const class Aircraft &aircraft);
+    void update_engine_model();
     struct {
         float cht1_temperature;  // engine reports in deg-C
         float cht2_temperature;

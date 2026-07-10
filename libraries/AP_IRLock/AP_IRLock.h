@@ -53,7 +53,7 @@ public:
 
 protected:
     struct AP_IRLock_Flags {
-        bool healthy; // true if sensor is healthy
+        uint8_t healthy : 1; // true if sensor is healthy
     } _flags;
 
     // internals

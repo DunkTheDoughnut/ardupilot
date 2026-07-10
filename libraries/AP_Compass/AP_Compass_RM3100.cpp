@@ -145,16 +145,17 @@ bool AP_Compass_RM3100::init()
 
     /* register the compass instance in the frontend */
     dev->set_device_type(DEVTYPE_RM3100);
-    if (!register_compass(dev->get_bus_id())) {
+    if (!register_compass(dev->get_bus_id(), compass_instance)) {
         return false;
     }
+    set_dev_id(compass_instance, dev->get_bus_id());
 
-    DEV_PRINTF("RM3100: Found at address 0x%x as compass %u\n", dev->get_bus_address(), instance);
-
-    set_rotation(rotation);
+    DEV_PRINTF("RM3100: Found at address 0x%x as compass %u\n", dev->get_bus_address(), compass_instance);
+    
+    set_rotation(compass_instance, rotation);
 
     if (force_external) {
-        set_external(true);
+        set_external(compass_instance, true);
     }
     
     // call timer() at 80Hz
@@ -231,11 +232,16 @@ void AP_Compass_RM3100::timer()
              magz * _scaler
          };
 
-        accumulate_sample(field);
+        accumulate_sample(field, compass_instance);
     }
 
 check_registers:
     dev->check_next_register();
+}
+
+void AP_Compass_RM3100::read()
+{
+	drain_accumulated_samples(compass_instance);
 }
 
 #endif  // AP_COMPASS_RM3100_ENABLED

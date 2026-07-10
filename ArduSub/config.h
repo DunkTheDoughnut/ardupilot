@@ -189,10 +189,6 @@
 # define AUTO_DISARMING_DELAY  0
 #endif
 
-#ifndef NEUTRAL_THROTTLE
-# define NEUTRAL_THROTTLE (0.5f)   // Throttle output for "no vertical thrust"
-#endif
-
 //////////////////////////////////////////////////////////////////////////////
 // Logging control
 //

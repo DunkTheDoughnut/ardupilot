@@ -166,7 +166,7 @@ bool AirSim::parse_sensors(const char *json)
                 break;
 
             case DATA_FLOAT:
-                *((float *)key.ptr) = strtof(p, nullptr);
+                *((float *)key.ptr) = atof(p);
                 break;
 
             case DATA_DOUBLE:
@@ -246,7 +246,7 @@ bool AirSim::parse_sensors(const char *json)
                         v->data = d;
                         v->length = n+1;
                     }
-                    v->data[n] = strtof(p, nullptr);
+                    v->data[n] = atof(p);
                     n++;
                     p = strchr(p,',');
                     if (!p) {

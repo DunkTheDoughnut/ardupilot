@@ -675,7 +675,7 @@ void AP_Logger_Backend::vehicle_was_disarmed()
     }
 }
 
-// we are enabled if we should be logging at the moment
+// this sensor is enabled if we should be logging at the moment
 bool AP_Logger_Backend::logging_enabled() const
 {
     if (hal.util->get_soft_armed() ||

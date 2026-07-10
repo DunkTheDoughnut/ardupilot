@@ -83,8 +83,7 @@ void Rover::radio_failsafe_check(uint16_t pwm)
     }
 
     bool failed = pwm < static_cast<uint16_t>(g.fs_throttle_value);
-    if (AP_HAL::millis() - failsafe.last_valid_rc_ms > rc().get_fs_timeout_ms()) {
-        // we haven't had a valid RC frame for RC_FS_TIMEOUT seconds
+    if (AP_HAL::millis() - failsafe.last_valid_rc_ms > 500) {
         failed = true;
     }
     AP_Notify::flags.failsafe_radio = failed;

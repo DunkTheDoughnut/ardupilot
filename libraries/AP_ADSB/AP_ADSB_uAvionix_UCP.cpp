@@ -617,12 +617,8 @@ bool AP_ADSB_uAvionix_UCP::parseByte(const uint8_t data, GDL90_RX_MESSAGE &msg, 
         break;
 
     case GDL90_RX_UNSTUFF:
-        if (status.length < ARRAY_SIZE(msg.raw)) {
-            msg.raw[status.length++] = data ^ GDL90_STUFF_BYTE;
-            status.state = GDL90_RX_IN_PACKET;
-        } else {
-            status.state = GDL90_RX_IDLE;
-        }
+        msg.raw[status.length++] = data ^ GDL90_STUFF_BYTE;
+        status.state = GDL90_RX_IN_PACKET;
         break;
     }
     status.prev_data = data;

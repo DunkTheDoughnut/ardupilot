@@ -10,7 +10,6 @@
 #include "AC_CustomControl_PCAC.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
-#include <AP_Scheduler/AP_Scheduler.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
@@ -32,8 +31,7 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
     // parameters for empty controller. only used as a template, no need for param table 
     // AP_SUBGROUPVARPTR(_backend, "1_", 6, AC_CustomControl, _backend_var_info[0]),
 
-    // @Group: 2_
-    // @Path: AC_CustomControl_PID.cpp
+    // parameters for PID controller
     AP_SUBGROUPVARPTR(_backend, "2_", 7, AC_CustomControl, _backend_var_info[1]),
 
     // parameters for PID controller
@@ -44,7 +42,8 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
 
 const struct AP_Param::GroupInfo *AC_CustomControl::_backend_var_info[CUSTOMCONTROL_MAX_TYPES];
 
-AC_CustomControl::AC_CustomControl(AP_AHRS_View*& ahrs, AC_AttitudeControl*& att_control, AP_MotorsMulticopter*& motors) :
+AC_CustomControl::AC_CustomControl(AP_AHRS_View*& ahrs, AC_AttitudeControl*& att_control, AP_MotorsMulticopter*& motors, float dt) :
+    _dt(dt),
     _ahrs(ahrs),
     _att_control(att_control),
     _motors(motors)
@@ -54,8 +53,6 @@ AC_CustomControl::AC_CustomControl(AP_AHRS_View*& ahrs, AC_AttitudeControl*& att
 
 void AC_CustomControl::init(void)
 {
-    _dt = AP::scheduler().get_loop_period_s();
-
     switch (CustomControlType(_controller_type))
     {
         case CustomControlType::CONT_NONE:

@@ -19,14 +19,18 @@ int lua_new_Parameter(lua_State *L) {
         name = luaL_checkstring(L, 1);
     }
 
-    auto *p = new_Parameter(L);
+    // This chunk is the same as the auto generated constructor
+    void *ud = lua_newuserdata(L, sizeof(Parameter));
+    new (ud) Parameter();
+    luaL_getmetatable(L, "Parameter");
+    lua_setmetatable(L, -2);
 
     if (args == 0) {
         // no arguments, nothing to do
         return 1;
     }
 
-    if (!p->init(name)) {
+    if (!static_cast<Parameter*>(ud)->init(name)) {
         return luaL_error(L, "No parameter: %s", name);
     }
 
@@ -441,7 +445,11 @@ int DroneCAN_Handle::new_handle(lua_State *L)
         return 0;
     }
 
-    auto *h = new_DroneCAN_Handle(L);
+    // This chunk is the same as the auto generated constructor
+    void *ud = lua_newuserdata(L, sizeof(DroneCAN_Handle));
+    new (ud) DroneCAN_Handle();
+
+    auto *h = static_cast<DroneCAN_Handle*>(ud);
 
     h->dc = dc;
     h->signature = sig;
@@ -449,6 +457,9 @@ int DroneCAN_Handle::new_handle(lua_State *L)
 #if CANARD_ENABLE_CANFD
     h->canfd = send_canfd;
 #endif
+
+    luaL_getmetatable(L, "DroneCAN_Handle");
+    lua_setmetatable(L, -2);
 
     return 1;
 }

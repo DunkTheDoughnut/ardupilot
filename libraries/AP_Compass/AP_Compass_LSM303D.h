@@ -50,6 +50,7 @@ private:
     int16_t _mag_y;
     int16_t _mag_z;
 
+    uint8_t _compass_instance;
     bool _initialised;
 
     uint8_t _mag_range_ga;

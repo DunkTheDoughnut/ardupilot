@@ -7,12 +7,11 @@ Andrew Tridgell, October 2011
  AP_FLAKE8_CLEAN
 """
 import atexit
-import copy
 import fnmatch
+import copy
 import glob
 import optparse
 import os
-import pathlib
 import re
 import shutil
 import signal
@@ -21,21 +20,21 @@ import sys
 import time
 import traceback
 
-from pymavlink.generator import mavtemplate
-
-import antennatracker
+import blimp
+import rover
 import arducopter
 import arduplane
 import ardusub
-import balancebot
-import blimp
-import examples
-import helicopter
+import antennatracker
 import quadplane
-import rover
+import balancebot
 import sailboat
+import helicopter
 
+import examples
 from pysim import util
+from pymavlink.generator import mavtemplate
+
 from vehicle_test_suite import Test
 
 tester = None
@@ -100,7 +99,7 @@ def build_examples(**kwargs):
         print("Running build.examples for %s" % target)
         try:
             util.build_examples(target, **kwargs)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print("Failed build_examples on board=%s" % target)
             print(str(e))
             return False
@@ -114,7 +113,7 @@ def build_unit_tests(**kwargs):
         print("Running build.unit_tests for %s" % target)
         try:
             util.build_tests(target, **kwargs)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print("Failed build.unit_tests on board=%s" % target)
             print(str(e))
             return False
@@ -250,7 +249,7 @@ def alarm_handler(signum, frame):
         convert_gpx()
         write_fullresults()
         os.killpg(0, signal.SIGKILL)
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     sys.exit(1)
 
@@ -298,7 +297,7 @@ def binary_path(step, debug=False):
     """Get vehicle binary path."""
     try:
         vehicle = step.split(".")[1]
-    except IndexError:
+    except Exception:
         return None
 
     if vehicle not in __bin_names:
@@ -394,20 +393,18 @@ def run_specific_test(step, *args, **kwargs):
     for a in tester.tests():
         if not isinstance(a, Test):
             a = Test(a)
-        # print("Got %s" % (a.name))
+        print("Got %s" % (a.name))
         if a.name in tests:
             run.append(a)
-            tests.remove(a.name)
-    if len(tests):
-        print(f"Failed to find tests {tests}")
-        sys.exit(1)
     return tester.autotest(tests=run, allow_skips=False, step_name=step), tester
+    print("Failed to find test %s on %s" % (test, testname))
+    sys.exit(1)
 
 
 def run_step(step):
     """Run one step."""
     # remove old logs
-    util.run_cmd('rm -f logs/*.BIN logs/LASTLOG.TXT')
+    util.run_cmd('/bin/rm -f logs/*.BIN logs/LASTLOG.TXT')
 
     if step == "prerequisites":
         return test_prerequisites()
@@ -482,10 +479,10 @@ def run_step(step):
 
     # see if we need any supplementary binaries
     supplementary_binaries = []
-    for key, value in supplementary_test_binary_map.items():
-        if step.startswith(key):
+    for k in supplementary_test_binary_map.keys():
+        if step.startswith(k):
             # this test needs to use supplementary binaries
-            for supplementary_test_binary in value:
+            for supplementary_test_binary in supplementary_test_binary_map[k]:
                 a = supplementary_test_binary.split(':')
                 if len(a) != 4:
                     raise ValueError("Bad supplementary_test_binary %s" % supplementary_test_binary)
@@ -639,7 +636,8 @@ class TestResults(object):
 
         # Load template file
         template_path = 'Tools/autotest/web/autotest-badge-template.svg'
-        template = pathlib.Path(util.reltopdir(template_path)).read_text()
+        with open(util.reltopdir(template_path), "r") as f:
+            template = f.read()
 
         # Add our results to the template
         badge = template.format(color=badge_color,
@@ -751,7 +749,7 @@ def run_tests(steps):
                     failed_testinstances[step].append(testinstance)
                 results.add(step, '<span class="failed-text">FAILED</span>',
                             time.time() - t1)
-        except Exception as msg:  # noqa: BLE001
+        except Exception as msg:
             passed = False
             failed.append(step)
             print(">>>> FAILED STEP: %s at %s (%s)" %
@@ -1074,8 +1072,12 @@ if __name__ == "__main__":
     if opts.move_logs_on_test_failure is None:
         opts.move_logs_on_test_failure = opts.autotest_server
 
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        opts.move_logs_on_test_failure = True
+        # temporarily default it to the old behaviour, but allow a
+        # user to test it by setting an environment variable:
+        if os.getenv("AP_AUTOTEST_MOVE_LOGS_ON_FAILURE") is not None:
+            opts.move_logs_on_test_failure = os.getenv("AP_AUTOTEST_MOVE_LOGS_ON_FAILURE") == "1"
+        else:
+            opts.move_logs_on_test_failure = True
 
     steps = [
         'prerequisites',

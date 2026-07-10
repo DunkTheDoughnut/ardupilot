@@ -16,7 +16,7 @@ AP_Compass_Backend::AP_Compass_Backend()
 {
 }
 
-void AP_Compass_Backend::rotate_field(Vector3f &mag)
+void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
 {
     Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
     if (MAG_BOARD_ORIENTATION != ROTATION_NONE) {
@@ -31,7 +31,7 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag)
       before the board orientation so it is independent of
       AHRS_ORIENTATION
      */
-    if (!is_external()) {
+    if (!is_external(instance)) {
         const uint32_t dev_id = uint32_t(_compass._state[Compass::StateIndex(instance)].dev_id);
         static const struct offset {
             uint32_t dev_id;
@@ -56,7 +56,7 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag)
     }
 }
 
-void AP_Compass_Backend::publish_raw_field(const Vector3f &mag)
+void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint8_t instance)
 {
     // note that we do not set last_update_usec here as otherwise the
     // EKF and DCM would end up consuming compass data at the full
@@ -71,9 +71,9 @@ void AP_Compass_Backend::publish_raw_field(const Vector3f &mag)
 #endif
 }
 
-void AP_Compass_Backend::correct_field(Vector3f &mag)
+void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 {
-    Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
+    Compass::mag_state &state = _compass._state[Compass::StateIndex(i)];
 
     const Vector3f &offsets = state.offset.get();
 #if AP_COMPASS_DIAGONALS_ENABLED
@@ -86,7 +86,7 @@ void AP_Compass_Backend::correct_field(Vector3f &mag)
 
     // add in scale factor, use a wide sanity check. The calibrator
     // uses a narrower check.
-    if (_compass.have_scale_factor(instance)) {
+    if (_compass.have_scale_factor(i)) {
         mag *= state.scale_factor;
     }
 
@@ -111,7 +111,7 @@ void AP_Compass_Backend::correct_field(Vector3f &mag)
       being applied so it can be logged correctly
     */    
     state.motor_offset.zero();
-    if (_compass._per_motor.enabled() && instance == 0) {
+    if (_compass._per_motor.enabled() && i == 0) {
         // per-motor correction is only valid for first compass
         _compass._per_motor.compensate(state.motor_offset);
     } else if (_compass._motor_comp_type == AP_COMPASS_MOT_COMP_THROTTLE) {
@@ -134,17 +134,17 @@ void AP_Compass_Backend::correct_field(Vector3f &mag)
 #endif // COMPASS_MOT_ENABLED
 }
 
-void AP_Compass_Backend::accumulate_sample(Vector3f &field,
+void AP_Compass_Backend::accumulate_sample(Vector3f &field, uint8_t instance,
                                            uint32_t max_samples)
 {
     /* rotate raw_field from sensor frame to body frame */
-    rotate_field(field);
+    rotate_field(field, instance);
 
     /* publish raw_field (uncorrected point sample) for calibration use */
-    publish_raw_field(field);
+    publish_raw_field(field, instance);
 
     /* correct raw_field for known errors */
-    correct_field(field);
+    correct_field(field, instance);
 
     if (!field_ok(field)) {
         return;
@@ -161,7 +161,8 @@ void AP_Compass_Backend::accumulate_sample(Vector3f &field,
     }
 }
 
-void AP_Compass_Backend::drain_accumulated_samples(const Vector3f *scaling)
+void AP_Compass_Backend::drain_accumulated_samples(uint8_t instance,
+                                                   const Vector3f *scaling)
 {
     WITH_SEMAPHORE(_sem);
 
@@ -176,7 +177,7 @@ void AP_Compass_Backend::drain_accumulated_samples(const Vector3f *scaling)
     }
     state.accum /= state.accum_count;
 
-    publish_filtered_field(state.accum);
+    publish_filtered_field(state.accum, instance);
 
     state.accum.zero();
     state.accum_count = 0;
@@ -185,7 +186,7 @@ void AP_Compass_Backend::drain_accumulated_samples(const Vector3f *scaling)
 /*
   copy latest data to the frontend from a backend
  */
-void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag)
+void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag, uint8_t instance)
 {
     Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
 
@@ -195,7 +196,7 @@ void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag)
     state.last_update_usec = AP_HAL::micros();
 }
 
-void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
+void AP_Compass_Backend::set_last_update_usec(uint32_t last_update, uint8_t instance)
 {
     Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
     state.last_update_usec = last_update;
@@ -205,19 +206,16 @@ void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
   register a new backend with frontend, returning instance which
   should be used in publish_field()
  */
-bool AP_Compass_Backend::register_compass(int32_t dev_id)
-{
-    if (!_compass.register_compass(dev_id, instance)) {
-        return false;
-    }
-    set_dev_id(dev_id);
-    return true;
+bool AP_Compass_Backend::register_compass(int32_t dev_id, uint8_t& instance) const
+{ 
+    return _compass.register_compass(dev_id, instance);
 }
+
 
 /*
   set dev_id for an instance
 */
-void AP_Compass_Backend::set_dev_id(uint32_t dev_id)
+void AP_Compass_Backend::set_dev_id(uint8_t instance, uint32_t dev_id)
 {
     _compass._state[Compass::StateIndex(instance)].dev_id.set_and_notify(dev_id);
     _compass._state[Compass::StateIndex(instance)].detected_dev_id = dev_id;
@@ -226,7 +224,7 @@ void AP_Compass_Backend::set_dev_id(uint32_t dev_id)
 /*
   save dev_id, used by SITL
 */
-void AP_Compass_Backend::save_dev_id()
+void AP_Compass_Backend::save_dev_id(uint8_t instance)
 {
     _compass._state[Compass::StateIndex(instance)].dev_id.save();
 }
@@ -234,20 +232,20 @@ void AP_Compass_Backend::save_dev_id()
 /*
   set external for an instance
 */
-void AP_Compass_Backend::set_external(bool external)
+void AP_Compass_Backend::set_external(uint8_t instance, bool external)
 {
     if (_compass._state[Compass::StateIndex(instance)].external != 2) {
         _compass._state[Compass::StateIndex(instance)].external.set_and_notify(external);
     }
 }
 
-bool AP_Compass_Backend::is_external()
+bool AP_Compass_Backend::is_external(uint8_t instance)
 {
     return _compass._state[Compass::StateIndex(instance)].external;
 }
 
 // set rotation of an instance
-void AP_Compass_Backend::set_rotation(enum Rotation rotation)
+void AP_Compass_Backend::set_rotation(uint8_t instance, enum Rotation rotation)
 {
     _compass._state[Compass::StateIndex(instance)].rotation = rotation;
 }

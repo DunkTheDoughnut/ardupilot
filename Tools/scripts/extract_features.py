@@ -6,21 +6,29 @@ script to determine what features have been built into an ArduPilot binary
 AP_FLAKE8_CLEAN
 """
 import argparse
+import os
 import re
-
+import string
+import subprocess
+import sys
+import time
 import build_options
+import select
 
-from build_script_base import BuildScriptBase
+
+if sys.version_info[0] < 3:
+    running_python3 = False
+else:
+    running_python3 = True
 
 
-class ExtractFeatures(BuildScriptBase):
+class ExtractFeatures(object):
 
     class FindString(object):
         def __init__(self, string):
             self.string = string
 
     def __init__(self, filename, nm="arm-none-eabi-nm", strings="strings"):
-        super().__init__()
         self.filename = filename
         self.nm = nm
         self.strings = strings
@@ -45,10 +53,8 @@ class ExtractFeatures(BuildScriptBase):
             ('HAL_ADSB_{type}_ENABLED', r'AP_ADSB_(?P<type>.*)::update',),
             ('HAL_ADSB_UCP_ENABLED', 'AP_ADSB_uAvionix_UCP::update',),
 
-            ('AP_COMPASS_{type}_ENABLED', r'AP_Compass_(?P<type>.*)::probe\b',),
+            ('AP_COMPASS_{type}_ENABLED', r'AP_Compass_(?P<type>.*)::read\b',),
             ('AP_COMPASS_ICM20948_ENABLED', r'AP_Compass_AK09916::probe_ICM20948',),
-            ('AP_COMPASS_AK8963_ENABLED', r'AP_Compass_AK8963::probe_mpu9250',),
-            ('AP_COMPASS_HMC5843_ENABLED', r'AP_Compass_HMC5843::probe_mpu6000',),
             ('AP_COMPASS_DRONECAN_HIRES_ENABLED', r'AP_Compass_DroneCAN::handle_magnetic_field_hires',),
 
             ('AP_AIS_ENABLED', 'AP_AIS::decode_position_report',),
@@ -83,7 +89,6 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_RANGEFINDER_JRE_SERIAL_ENABLED', r'AP_RangeFinder_JRE_Serial::get_reading\b',),
             ('AP_RANGEFINDER_RDS02UF_ENABLED', r'AP_RangeFinder_RDS02UF::get_reading\b',),
             ('AP_RANGEFINDER_HEXSOONRADAR_ENABLED', r'AP_RangeFinder_NRA24_CAN::handle_frame'),
-            ('AP_RANGEFINDER_LIGHTWARE_GRF_ENABLED', 'AP_RangeFinder_LightWareGRF::get_reading'),
 
             ('AP_GPS_NMEA_UNICORE_ENABLED', r'AP_GPS_NMEA::parse_agrica_field',),
             ('AP_GPS_{type}_ENABLED', r'AP_GPS_(?P<type>.*)::read\b',),
@@ -105,14 +110,13 @@ class ExtractFeatures(BuildScriptBase):
 
             ('AP_BATTERY_{type}_ENABLED', r'AP_BattMonitor_(?P<type>.*)::init\b',),
             ('AP_BATTERY_ESC_TELEM_OUTBOUND_ENABLED', r'AP_BattMonitor_Backend::update_esc_telem_outbound\b',),
-            ('AP_BATTERY_WATT_MAX_ENABLED', r'Plane::throttle_watt_limiter|AP_MotorsUGV::get_power_limit_max_throttle',),
+            ('AP_BATTERY_WATT_MAX_ENABLED', 'Plane::throttle_watt_limiter',),
 
             ('HAL_MOUNT_ENABLED', 'AP_Mount::AP_Mount',),
             ('HAL_MOUNT_{type}_ENABLED', r'AP_Mount_(?P<type>.*)::update\b',),
             ('HAL_SOLO_GIMBAL_ENABLED', 'AP_Mount_SoloGimbal::init',),
             ('HAL_MOUNT_STORM32SERIAL_ENABLED', 'AP_Mount_SToRM32_serial::update',),
             ('HAL_MOUNT_STORM32MAVLINK_ENABLED', 'AP_Mount_SToRM32::update',),
-            ('AP_MOUNT_POI_LOCK_ENABLED', 'AP_Mount::set_poi_lock'),
 
             ('HAL_SPEKTRUM_TELEM_ENABLED', r'AP::spektrum_telem',),
             ('HAL_{type}_TELEM_ENABLED', r'AP_(?P<type>.*)_Telem::init',),
@@ -152,7 +156,6 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_FENCE_ENABLED', r'AC_Fence::check\b',),
             ('HAL_RALLY_ENABLED', 'AP_Rally::find_nearest_rally_point',),
             ('AP_AVOIDANCE_ENABLED', 'AC_Avoid::AC_Avoid',),
-            ('AP_AVOIDANCE_ALTHOLD_ENABLED', 'AC_Avoid::adjust_roll_pitch',),
             ('AP_OAPATHPLANNER_ENABLED', 'AP_OAPathPlanner::AP_OAPathPlanner',),
             ('AC_PAYLOAD_PLACE_ENABLED', 'PayloadPlace::start_descent'),
             ('AP_MISSION_NAV_PAYLOAD_PLACE_ENABLED', ExtractFeatures.FindString('PayloadPlace')),
@@ -210,7 +213,6 @@ class ExtractFeatures(BuildScriptBase):
             ('GPS_MOVING_BASELINE', r'MovingBase::var_info',),
             ('AP_DRONECAN_SEND_GPS', r'AP_GPS_DroneCAN::instance_exists\b',),
             ('AP_GPS_BLENDED_ENABLED', r'AP_GPS::calc_blend_weights\b',),
-            ('AP_GPS_DEBUG_LOGGING_ENABLED', 'AP_GPS_Backend::log_data',),
 
             ('HAL_WITH_DSP', r'AP_HAL::DSP::find_peaks\b',),
             ('AP_INERTIALSENSOR_HARMONICNOTCH_ENABLED', r'AP_InertialSensor::HarmonicNotch::update_params\b',),
@@ -223,7 +225,7 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_BARO_THST_COMP_ENABLED', r'AP_Baro::thrust_pressure_correction\b',),
             ('AP_TEMPCALIBRATION_ENABLED', r'AP_TempCalibration::apply_calibration',),
 
-            ('AP_PICCOLOCAN_ENABLED', r'AP_PiccoloCAN::update',),
+            ('HAL_PICCOLO_CAN_ENABLE', r'AP_PiccoloCAN::update',),
             ('EK3_FEATURE_EXTERNAL_NAV', r'NavEKF3_core::CorrectExtNavVelForSensorOffset'),
             ('EK3_FEATURE_DRAG_FUSION', r'NavEKF3_core::FuseDragForces'),
             ('EK3_FEATURE_OPTFLOW_FUSION', r'NavEKF3_core::FuseOptFlow'),
@@ -247,6 +249,8 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_INERTIALSENSOR_KILL_IMU_ENABLED', r'AP_InertialSensor::kill_imu'),
             ('AP_CRASHDUMP_ENABLED', 'CrashCatcher_DumpMemory'),
             ('AP_CAN_SLCAN_ENABLED', 'SLCAN::CANIface::var_info'),
+            ('AC_POLYFENCE_FENCE_POINT_PROTOCOL_SUPPORT', 'AC_PolyFence_loader::handle_msg_fetch_fence_point'),
+            ('AP_MAVLINK_RALLY_POINT_PROTOCOL_ENABLED', 'GCS_MAVLINK::handle_common_rally_message'),
             ('AP_ADSB_AVOIDANCE_ENABLED', 'AP_Avoidance::init'),
 
             ('AP_SDCARD_STORAGE_ENABLED', 'StorageAccess::attach_file'),
@@ -258,9 +262,8 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_MAVLINK_MSG_SERIAL_CONTROL_ENABLED', 'GCS_MAVLINK::handle_serial_control'),
             ('AP_MAVLINK_MSG_MISSION_REQUEST_ENABLED', r'GCS_MAVLINK::handle_mission_request\b'),
             ('AP_MAVLINK_MSG_RC_CHANNELS_RAW_ENABLED', r'GCS_MAVLINK::send_rc_channels_raw\b'),
-            ('AP_MAVLINK_FTP_ENABLED', 'GCS_FTP::init'),
+            ('AP_MAVLINK_FTP_ENABLED', 'GCS_MAVLINK::init'),
             ('AP_MAVLINK_MAV_CMD_SET_HAGL_ENABLED', 'Plane::handle_external_hagl'),
-            ('AP_MAVLINK_MAV_CMD_GET_HOME_POSITION_ENABLED', 'GCS_MAVLINK::handle_command_get_home_position'),  # noqa
             ('AP_MAVLINK_MSG_VIDEO_STREAM_INFORMATION_ENABLED', 'AP_Camera::send_video_stream_information'),
             ('AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED', 'GCS_MAVLINK::send_flight_information'),
             ('AP_MAVLINK_MSG_RANGEFINDER_SENDING_ENABLED', r'GCS_MAVLINK::send_rangefinder'),
@@ -302,7 +305,6 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_PLANE_SYSTEMID_ENABLED', r'AP_SystemID::start'),
             ('AP_DDS_ENABLED', r'AP_DDS_Client::start'),
             ('AP_RC_TRANSMITTER_TUNING_ENABLED',  r'Copter::tuning'),
-            ('AP_CPU_IDLE_STATS_ENABLED', r'AP_BoardConfig::use_idle_stats'),
 
             ('AP_PERIPH_DEVICE_TEMPERATURE_ENABLED', r'AP_Periph_FW::temperature_sensor_update'),
             ('AP_PERIPH_MSP_ENABLED', r'AP_Periph_FW::msp_init'),
@@ -312,7 +314,6 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_PERIPH_RELAY_ENABLED', r'AP_Periph_FW::handle_hardpoint_command'),
             ('AP_PERIPH_BATTERY_BALANCE_ENABLED', r'AP_Periph_FW::batt_balance_update'),
             ('AP_PERIPH_BATTERY_TAG_ENABLED', r'BatteryTag::update'),
-            ('AP_PERIPH_BATTERY_BMS_ENABLED', r'BatteryBMS::update'),
             ('AP_PERIPH_PROXIMITY_ENABLED', r'AP_Periph_FW::can_proximity_update'),
             ('AP_PERIPH_GPS_ENABLED', r'AP_Periph_FW::can_gps_update'),
             ('AP_PERIPH_ADSB_ENABLED', r'AP_Periph_FW::adsb_update'),
@@ -325,14 +326,11 @@ class ExtractFeatures(BuildScriptBase):
             ('AP_PERIPH_RCIN_ENABLED', r'AP_Periph_FW::rcin_update'),
             ('AP_PERIPH_RPM_ENABLED', r'AP_Periph_FW::rpm_sensor_send'),
             ('AP_PERIPH_AIRSPEED_ENABLED', r'AP_Periph_FW::can_airspeed_update'),
-
-            ('AP_SCRIPTING_BINDING_VEHICLE_ENABLED', 'AP_Vehicle_index'),
-            ('AP_SCRIPTING_BINDING_MOTORS_ENABLED', 'AP__motors___index'),
         ]
 
-    def progress_prefix(self):
-        """Return prefix for progress messages."""
-        return 'EF'
+    def progress(self, msg):
+        """Pretty-print progress."""
+        print("EF: %s" % msg)
 
     def validate_features_list(self):
         '''ensures that every define present in build_options.py could be
@@ -357,6 +355,59 @@ class ExtractFeatures(BuildScriptBase):
             if not matched:
                 raise ValueError("feature (%s) is not matched in extract_features" %
                                  (option.define))
+
+    def run_program(self, prefix, cmd_list, show_output=True, env=None):
+        """Swiped from build_binaries.py."""
+        if show_output:
+            self.progress("Running (%s)" % " ".join(cmd_list))
+        p = subprocess.Popen(
+            cmd_list,
+            stdin=None,
+            stdout=subprocess.PIPE,
+            close_fds=True,
+            stderr=subprocess.PIPE,
+            env=env)
+        stderr = bytearray()
+        output = ""
+        while True:
+            # read all of stderr:
+            while True:
+                (rin, _, _) = select.select([p.stderr.fileno()], [], [], 0)
+                if p.stderr.fileno() not in rin:
+                    break
+                new = p.stderr.read()
+                if len(new) == 0:
+                    break
+                stderr += new
+
+            x = p.stdout.readline()
+            if len(x) == 0:
+                (rin, _, _) = select.select([p.stderr.fileno()], [], [], 0)
+                if p.stderr.fileno() in rin:
+                    stderr += p.stderr.read()
+
+                returncode = os.waitpid(p.pid, 0)
+                if returncode:
+                    break
+                    # select not available on Windows... probably...
+                time.sleep(0.1)
+                continue
+            if running_python3:
+                x = bytearray(x)
+                x = filter(lambda x: chr(x) in string.printable, x)
+                x = "".join([chr(c) for c in x])
+            output += x
+            x = x.rstrip()
+            if show_output:
+                print("%s: %s" % (prefix, x))
+        (_, status) = returncode
+        if status != 0:
+            stderr = stderr.decode('utf-8')
+            self.progress("Process failed (%s) (%s)" %
+                          (str(returncode), stderr))
+            raise subprocess.CalledProcessError(
+                status, cmd_list, output=str(output), stderr=str(stderr))
+        return output
 
     class Symbols(object):
         def __init__(self):
@@ -394,7 +445,7 @@ class ExtractFeatures(BuildScriptBase):
             '--demangle',
             '--print-size',
             filename
-        ], show_output=False, show_command=False)
+        ], show_output=False)
         ret = ExtractFeatures.Symbols()
         for line in text_output.split("\n"):
             m = re.match("^([^ ]+) ([^ ]+) ([^ ]) (.*)", line.rstrip())
@@ -421,7 +472,7 @@ class ExtractFeatures(BuildScriptBase):
         text_output = self.run_program('EF', [
             self.strings,
             filename
-        ], show_output=False, show_command=False)
+        ], show_output=False)
         return text_output.split("\n")
 
     def extract(self):

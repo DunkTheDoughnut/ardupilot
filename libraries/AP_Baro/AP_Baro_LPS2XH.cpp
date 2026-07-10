@@ -16,6 +16,7 @@
 
 #if AP_BARO_LPS2XH_ENABLED
 
+#include <utility>
 #include <stdio.h>
 
 #include <AP_InertialSensor/AP_InertialSensor_Invensense_registers.h>
@@ -55,15 +56,20 @@ extern const AP_HAL::HAL &hal;
 
 //putting 1 in the MSB of those two registers turns on Auto increment for faster reading.
 
-AP_Baro_LPS2XH::AP_Baro_LPS2XH(AP_Baro &baro, AP_HAL::Device &dev)
+AP_Baro_LPS2XH::AP_Baro_LPS2XH(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev)
     : AP_Baro_Backend(baro)
-    , _dev(&dev)
+    , _dev(std::move(dev))
 {
 }
 
-AP_Baro_Backend *AP_Baro_LPS2XH::probe(AP_Baro &baro, AP_HAL::Device &dev)
+AP_Baro_Backend *AP_Baro_LPS2XH::probe(AP_Baro &baro,
+                                       AP_HAL::OwnPtr<AP_HAL::Device> dev)
 {
-    AP_Baro_LPS2XH *sensor = NEW_NOTHROW AP_Baro_LPS2XH(baro, dev);
+    if (!dev) {
+        return nullptr;
+    }
+
+    AP_Baro_LPS2XH *sensor = NEW_NOTHROW AP_Baro_LPS2XH(baro, std::move(dev));
     if (!sensor || !sensor->_init()) {
         delete sensor;
         return nullptr;
@@ -73,10 +79,14 @@ AP_Baro_Backend *AP_Baro_LPS2XH::probe(AP_Baro &baro, AP_HAL::Device &dev)
 }
 
 AP_Baro_Backend *AP_Baro_LPS2XH::probe_InvensenseIMU(AP_Baro &baro,
-                                                     AP_HAL::Device &dev,
+                                                     AP_HAL::OwnPtr<AP_HAL::Device> dev,
                                                      uint8_t imu_address)
 {
-    AP_Baro_LPS2XH *sensor = NEW_NOTHROW AP_Baro_LPS2XH(baro, dev);
+    if (!dev) {
+        return nullptr;
+    }
+
+    AP_Baro_LPS2XH *sensor = NEW_NOTHROW AP_Baro_LPS2XH(baro, std::move(dev));
     if (sensor) {
         if (!sensor->_imu_i2c_init(imu_address)) {
             delete sensor;

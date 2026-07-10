@@ -20,7 +20,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <AP_HAL/ap_setjmp.h>
+#include <setjmp.h>
 
 #include <AP_Filesystem/posix_compat.h>
 #include <AP_Scripting/AP_Scripting.h>
@@ -30,14 +30,6 @@
 #include "lua_common_defs.h"
 
 #include "lua/src/lua.hpp"
-
-class lua_scripts;
-
-static inline lua_scripts* ls_object_from_state(lua_State *L) {
-    // the state extra space stores a pointer to the lua_scripts object the
-    // state is a part of, used for ls_* callback trampolines.
-    return *static_cast<lua_scripts**>(lua_getextraspace(L));
-}
 
 class lua_scripts
 {
@@ -58,11 +50,6 @@ public:
 
 private:
 
-    static int ls_run_engine(lua_State *L) {
-        return ls_object_from_state(L)->run_engine(L);
-    };
-    int run_engine(lua_State *L);
-
     void create_sandbox(lua_State *L);
 
     typedef struct script_info {
@@ -74,7 +61,7 @@ private:
        script_info *next;
     } script_info;
 
-    bool load_script(lua_State *L, script_info *new_script);
+    script_info *load_script(lua_State *L, char *filename);
 
     void reset_loop_overtime(lua_State *L);
 
@@ -93,6 +80,12 @@ private:
     // it must be static to be passed to the C API
     static void hook(lua_State *L, lua_Debug *ar);
 
+    // lua panic handler, will jump back to the start of run
+    static int atpanic(lua_State *L);
+    static jmp_buf panic_jmp;
+
+    lua_State *lua_state;
+
     const AP_Int32 & _vm_steps;
     AP_Int8 & _debug_options;
 
@@ -107,7 +100,7 @@ private:
     // helper for print and log of runtime stats
     void update_stats(const char *name, uint32_t run_time, int total_mem, int run_mem);
 
-    // must be static for bindings
+    // must be static for use in atpanic
     static void print_error(MAV_SEVERITY severity);
     static char *error_msg_buf;
     static HAL_Semaphore error_msg_buf_sem;
@@ -120,7 +113,7 @@ private:
     static HAL_Semaphore crc_sem;
 
 public:
-    // must be static and public to allow bindings to issue non-fatal warnings
+    // must be static for use in atpanic, public to allow bindings to issue none fatal warnings
     static void set_and_print_new_error_message(MAV_SEVERITY severity, const char *fmt, ...) FMT_PRINTF(2,3);
 
     // return last error message, nullptr if none, must use semaphore as this is updated in the scripting thread

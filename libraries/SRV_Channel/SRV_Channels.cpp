@@ -530,7 +530,7 @@ void SRV_Channels::push()
                 ap_dronecan->SRV_push_servos();
                 break;
             }
-#if AP_PICCOLOCAN_ENABLED
+#if HAL_PICCOLO_CAN_ENABLE
             case AP_CAN::Protocol::PiccoloCAN: {
                 AP_PiccoloCAN *ap_pcan = AP_PiccoloCAN::get_pcan(i);
                 if (ap_pcan == nullptr) {

@@ -6,17 +6,14 @@ AP_FLAKE8_CLEAN
 
 # Imports
 import os
-import select
-import socket
-import struct
 import sys
 import time
-
-from threading import Thread
-from typing import List
-from typing import Union
-
+import socket
+import select
+import struct
 import numpy as np
+from threading import Thread
+from typing import List, Union
 
 # Here we set up environment variables so we can run this script
 # as an external controller outside of Webots (useful for debugging)
@@ -38,9 +35,7 @@ else:
 os.environ["PYTHONIOENCODING"] = "UTF-8"
 sys.path.append(f"{WEBOTS_HOME}/lib/controller/python")
 
-from controller import Camera  # noqa: E401, E402
-from controller import RangeFinder  # noqa: E401, E402
-from controller import Robot  # noqa: E401, E402
+from controller import Robot, Camera, RangeFinder # noqa: E401, E402
 
 
 class WebotsArduVehicle():

@@ -102,37 +102,37 @@ const AP_Param::Info Blimp::var_info[] = {
     // @Description: Flight mode when Channel 5 pwm is <= 1230
     // @Values: 0:LAND,1:MANUAL,2:VELOCITY,3:LOITER
     // @User: Standard
-    GARRAY(flight_modes, 0, "FLTMODE1", (uint8_t)FLIGHT_MODE_1),
+    GSCALAR(flight_mode1, "FLTMODE1",               (uint8_t)FLIGHT_MODE_1),
 
     // @Param: FLTMODE2
     // @CopyFieldsFrom: FLTMODE1
     // @DisplayName: Flight Mode 2
     // @Description: Flight mode when Channel 5 pwm is >1230, <= 1360
-    GARRAY(flight_modes, 1, "FLTMODE2", (uint8_t)FLIGHT_MODE_2),
+    GSCALAR(flight_mode2, "FLTMODE2",               (uint8_t)FLIGHT_MODE_2),
 
     // @Param: FLTMODE3
     // @CopyFieldsFrom: FLTMODE1
     // @DisplayName: Flight Mode 3
     // @Description: Flight mode when Channel 5 pwm is >1360, <= 1490
-    GARRAY(flight_modes, 2, "FLTMODE3", (uint8_t)FLIGHT_MODE_3),
+    GSCALAR(flight_mode3, "FLTMODE3",               (uint8_t)FLIGHT_MODE_3),
 
     // @Param: FLTMODE4
     // @CopyFieldsFrom: FLTMODE1
     // @DisplayName: Flight Mode 4
     // @Description: Flight mode when Channel 5 pwm is >1490, <= 1620
-    GARRAY(flight_modes, 3, "FLTMODE4", (uint8_t)FLIGHT_MODE_4),
+    GSCALAR(flight_mode4, "FLTMODE4",               (uint8_t)FLIGHT_MODE_4),
 
     // @Param: FLTMODE5
     // @CopyFieldsFrom: FLTMODE1
     // @DisplayName: Flight Mode 5
     // @Description: Flight mode when Channel 5 pwm is >1620, <= 1749
-    GARRAY(flight_modes, 4, "FLTMODE5", (uint8_t)FLIGHT_MODE_5),
+    GSCALAR(flight_mode5, "FLTMODE5",               (uint8_t)FLIGHT_MODE_5),
 
     // @Param: FLTMODE6
     // @CopyFieldsFrom: FLTMODE1
     // @DisplayName: Flight Mode 6
     // @Description: Flight mode when Channel 5 pwm is >=1750
-    GARRAY(flight_modes, 5, "FLTMODE6", (uint8_t)FLIGHT_MODE_6),
+    GSCALAR(flight_mode6, "FLTMODE6",               (uint8_t)FLIGHT_MODE_6),
 
     // @Param: FLTMODE_CH
     // @DisplayName: Flightmode channel
@@ -178,7 +178,6 @@ const AP_Param::Info Blimp::var_info[] = {
     // @DisplayName: EKF failsafe variance threshold
     // @Description: Allows setting the maximum acceptable compass and velocity variance
     // @Values: 0.6:Strict, 0.8:Default, 1.0:Relaxed
-    // @Range: 0.6 1.0
     // @User: Advanced
     GSCALAR(fs_ekf_thresh, "FS_EKF_THRESH",    FS_EKF_THRESHOLD_DEFAULT),
 
@@ -316,13 +315,13 @@ const AP_Param::Info Blimp::var_info[] = {
 #if HAL_NAVEKF2_AVAILABLE
     // @Group: EK2_
     // @Path: ../libraries/AP_NavEKF2/AP_NavEKF2.cpp
-    GOBJECTN(ahrs.ekf2.EKF2, NavEKF2, "EK2_", NavEKF2),
+    GOBJECTN(ahrs.EKF2, NavEKF2, "EK2_", NavEKF2),
 #endif
 
 #if HAL_NAVEKF3_AVAILABLE
     // @Group: EK3_
     // @Path: ../libraries/AP_NavEKF3/AP_NavEKF3.cpp
-    GOBJECTN(ahrs.ekf3.EKF3, NavEKF3, "EK3_", NavEKF3),
+    GOBJECTN(ahrs.EKF3, NavEKF3, "EK3_", NavEKF3),
 #endif
 
 #if AP_RSSI_ENABLED

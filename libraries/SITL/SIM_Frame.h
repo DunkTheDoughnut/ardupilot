@@ -45,11 +45,11 @@ public:
           motors(_motors) {}
 
 #if AP_SIM_ENABLED
-    // create a frame by name from its template
-    static Frame *create_frame(const char *name);
+    // find a frame by name
+    static Frame *find_frame(const char *name);
     
     // initialise frame
-    void init(const char *frame_str);
+    void init(const char *frame_str, Battery *_battery);
 
     // calculate rotational and linear accelerations
     void calculate_forces(const Aircraft &aircraft,
@@ -62,7 +62,8 @@ public:
     float terminal_rotation_rate;
     uint8_t motor_offset;
 
-    float get_current_amp(void);
+    // calculate current and voltage
+    void current_and_voltage(float &voltage, float &current);
 
     // get mass in kg
     float get_mass(void) const {
@@ -73,10 +74,6 @@ public:
     void set_mass(float new_mass) {
         mass = new_mass;
     }
-
-    float get_model_batt_max_voltage(void) const { return model.maxVoltage; }
-    float get_model_batt_capacity_ah(void) const { return model.battCapacityAh; }
-    float get_model_batt_resistance_ohm(void) const { return model.refBatRes; }
     
 private:
     /*
@@ -99,9 +96,7 @@ private:
         float refCurrent = 29.3; // Amps
         float refAlt = 593; // altitude AMSL
         float refTempC = 25; // temperature C
-
-        // battery resistance reference value in Ohms
-        float refBatRes = 0.01;
+        float refBatRes = 0.01; // BAT.Res
 
         // full pack voltage
         float maxVoltage = 4.2*3;
@@ -163,6 +158,10 @@ private:
     // exposed area times coefficient of drag
     float areaCd;
     float mass;
+    float last_param_voltage;
+#if AP_SIM_ENABLED
+    Battery *battery;
+#endif
 
     // json parsing helpers
     void parse_float(AP_JSON::value val, const char* label, float &param);

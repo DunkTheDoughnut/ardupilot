@@ -32,7 +32,6 @@
 """Module for the OpaqueFunction action."""
 
 import collections.abc
-
 from typing import Any
 from typing import Callable
 from typing import Dict

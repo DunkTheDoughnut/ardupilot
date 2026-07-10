@@ -16,6 +16,7 @@
 
 #if AP_RANGEFINDER_PULSEDLIGHTLRF_ENABLED
 
+#include <utility>
 #include <stdio.h>
 
 #include <AP_HAL/AP_HAL.h>

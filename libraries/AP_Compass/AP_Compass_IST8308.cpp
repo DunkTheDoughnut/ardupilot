@@ -81,7 +81,7 @@
 
 extern const AP_HAL::HAL &hal;
 
-AP_Compass_Backend *AP_Compass_IST8308::probe(AP_HAL::OwnPtr<AP_HAL::Device> dev,
+AP_Compass_Backend *AP_Compass_IST8308::probe(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                                               bool force_external,
                                               enum Rotation rotation)
 {
@@ -162,17 +162,18 @@ bool AP_Compass_IST8308::init()
 
     //register compass instance
     _dev->set_device_type(DEVTYPE_IST8308);
-    if (!register_compass(_dev->get_bus_id())) {
+    if (!register_compass(_dev->get_bus_id(), _instance)) {
         return false;
     }
+    set_dev_id(_instance, _dev->get_bus_id());
 
     printf("%s found on bus %u id %u address 0x%02x\n", name,
            _dev->bus_num(), unsigned(_dev->get_bus_id()), _dev->get_bus_address());
 
-    set_rotation(_rotation);
+    set_rotation(_instance, _rotation);
 
     if (_force_external) {
-        set_external(true);
+        set_external(_instance, true);
     }
 
     _dev->register_periodic_callback(SAMPLING_PERIOD_USEC,
@@ -214,7 +215,12 @@ void AP_Compass_IST8308::timer()
     /* Resolution: 0.1515 µT/LSB - already convert to milligauss */
     Vector3f field = Vector3f{x * 1.515f, y * 1.515f, z * 1.515f};
 
-    accumulate_sample(field);
+    accumulate_sample(field, _instance);
+}
+
+void AP_Compass_IST8308::read()
+{
+    drain_accumulated_samples(_instance);
 }
 
 #endif  // AP_COMPASS_IST8308_ENABLED

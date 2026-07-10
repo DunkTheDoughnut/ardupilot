@@ -116,7 +116,7 @@ private:
     uint32_t last_report_ms;
 
     // has the timer been installed?
-    bool initialised;
+    bool initialised:1;
     
     // called by timer thread
     void timer_update(void);

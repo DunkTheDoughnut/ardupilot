@@ -19,9 +19,10 @@ public:
 private:
     AP_Float _roll_ff;
 
-    float _get_coordination_rate_offset(bool &inverted) const;
+    float _get_coordination_rate_offset(const float &aspeed, bool &inverted) const;
 
-    bool is_underspeed() const override;
+    float get_airspeed() const override;
+    bool is_underspeed(const float aspeed) const override;
     float get_measured_rate() const override;
 
 };

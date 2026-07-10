@@ -9,14 +9,14 @@ AP_FLAKE8_CLEAN
 '''
 
 import argparse
-import logging
+import sys
 import os
 import pathlib
-import platform
-import re
 import shutil
+import platform
 import subprocess
-import sys
+import re
+import logging
 
 if __name__ == '__main__':
 
@@ -50,8 +50,7 @@ if __name__ == '__main__':
     # See if there is a new version (only try on Linux)
     if platform.system() == "Linux":
         try:
-            from github_release_downloader import GitHubRepo
-            from github_release_downloader import check_and_download_updates
+            from github_release_downloader import check_and_download_updates, GitHubRepo
         except ImportError:
             print("Import github-release-downloader failed")
             print("Install with: python3 -m pip install github-release-downloader")

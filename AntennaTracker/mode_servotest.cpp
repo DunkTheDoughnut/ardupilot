@@ -18,8 +18,6 @@ bool ModeServoTest::set_servo(uint8_t servo_num, uint16_t pwm)
         return false;
     }
 
-    hal.rcout->cork();
-
     // set yaw servo pwm and send output to servo
     if (servo_num == CH_YAW) {
         SRV_Channels::set_output_pwm(SRV_Channel::k_tracker_yaw, pwm);
@@ -34,9 +32,7 @@ bool ModeServoTest::set_servo(uint8_t servo_num, uint16_t pwm)
 
     SRV_Channels::calc_pwm();
     SRV_Channels::output_ch_all();
-
-    hal.rcout->push();
-
+    
     // return success
     return true;
 }

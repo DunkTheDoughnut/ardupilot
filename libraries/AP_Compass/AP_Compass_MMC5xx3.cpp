@@ -90,7 +90,7 @@ bool AP_Compass_MMC5XX3::init()
     }
 
     if (whoami != MMC5983_ID) {
-        // printf("MMC5983 got unexpected product id: %d, expected: %d\n", whoami, MMC5983_ID);
+        printf("MMC5983 got unexpected product id: %d, expected: %d\n", whoami, MMC5983_ID);
         // not a MMC5983
         return false;
     }
@@ -109,16 +109,18 @@ bool AP_Compass_MMC5XX3::init()
 
     /* register the compass instance in the frontend */
     dev->set_device_type(DEVTYPE_MMC5983);
-    if (!register_compass(dev->get_bus_id())) {
+    if (!register_compass(dev->get_bus_id(), compass_instance)) {
         return false;
     }
 
-    printf("Found a MMC5983 on 0x%x as compass %u\n", unsigned(dev->get_bus_id()), instance);
+    set_dev_id(compass_instance, dev->get_bus_id());
 
-    set_rotation(rotation);
+    printf("Found a MMC5983 on 0x%x as compass %u\n", unsigned(dev->get_bus_id()), compass_instance);
+
+    set_rotation(compass_instance, rotation);
 
     if (force_external) {
-        set_external(true);
+        set_external(compass_instance, true);
     }
 
     dev->set_retries(1);
@@ -248,7 +250,7 @@ void AP_Compass_MMC5XX3::timer()
             offset = offset * 0.5f + new_offset * 0.5f;
         }
 
-        accumulate_sample(field);
+        accumulate_sample(field, compass_instance);
 
         if (!dev->write_register(REG_CONTROL0, REG_CONTROL0_TMM)) {
             printf("failed to initiate measurement\n");
@@ -286,7 +288,7 @@ void AP_Compass_MMC5XX3::timer()
                        float((data1[4] << 8) + data1[5]) - zero_offset};
         field *= counts_to_milliGauss;
         field -= offset;
-        accumulate_sample(field);
+        accumulate_sample(field, compass_instance);
 
         // we stay in STATE_MEASURE for measure_count_limit cycles
         if (measure_count++ >= measure_count_limit) {
@@ -300,6 +302,11 @@ void AP_Compass_MMC5XX3::timer()
         break;
     }
     }
+}
+
+void AP_Compass_MMC5XX3::read()
+{
+    drain_accumulated_samples(compass_instance);
 }
 
 #endif  // AP_COMPASS_MMC5XX3_ENABLED

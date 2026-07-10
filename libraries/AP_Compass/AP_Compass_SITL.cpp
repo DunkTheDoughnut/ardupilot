@@ -6,31 +6,37 @@
 
 extern const AP_HAL::HAL& hal;
 
-AP_Compass_SITL::AP_Compass_SITL(uint8_t _sitl_instance) :
-    _sitl(AP::sitl()),
-    sitl_instance(_sitl_instance)
+AP_Compass_SITL::AP_Compass_SITL()
+    : _sitl(AP::sitl())
 {
-    if (sitl_instance > ARRAY_SIZE(_sitl->mag_devid)) {
-        return;
-    }
-
-            const uint32_t dev_id = _sitl->mag_devid[sitl_instance];
+    if (_sitl != nullptr) {
+        for (uint8_t i=0; i<MAX_CONNECTED_MAGS; i++) {
+            uint32_t dev_id = _sitl->mag_devid[i];
             if (dev_id == 0) {
-                return;
+                continue;
             }
-            if (!register_compass(dev_id)) {
-                return;
-            }
+            uint8_t instance;
+            if (!register_compass(dev_id, instance)) {
+                continue;
+            } else if (_num_compass<MAX_SITL_COMPASSES) {
+                _compass_instance[_num_compass] = instance;
+                set_dev_id(_compass_instance[_num_compass], dev_id);
+
                 if (_sitl->mag_save_ids) {
                     // save so the compass always comes up configured in SITL
-                    save_dev_id();
+                    save_dev_id(_compass_instance[_num_compass]);
                 }
-                set_rotation(ROTATION_NONE);
+                set_rotation(instance, ROTATION_NONE);
+                _num_compass++;
+            }
+        }
 
         // Scroll through the registered compasses, and set the offsets
-            if (_compass.get_offsets(instance).is_zero()) {
-                _compass.set_offsets(instance, _sitl->mag_ofs[sitl_instance]);
+        for (uint8_t i=0; i<_num_compass; i++) {
+            if (_compass.get_offsets(i).is_zero()) {
+                _compass.set_offsets(i, _sitl->mag_ofs[i]);
             }
+        }
 
         // we want to simulate a calibrated compass by default, so set
         // scale to 1
@@ -39,25 +45,24 @@ AP_Compass_SITL::AP_Compass_SITL(uint8_t _sitl_instance) :
         AP_Param::set_default_by_name("COMPASS_SCALE3", 1);
 
         // make first compass external
-        if (sitl_instance == 0) {
-            set_external(true);
-        }
+        set_external(_compass_instance[0], true);
 
         hal.scheduler->register_timer_process(FUNCTOR_BIND(this, &AP_Compass_SITL::_timer, void));
+    }
 }
 
 
 /*
   create correction matrix for diagonals and off-diagonals
 */
-void AP_Compass_SITL::_setup_eliptical_correcion()
+void AP_Compass_SITL::_setup_eliptical_correcion(uint8_t i)
 {
-    Vector3f diag = _sitl->mag_diag[sitl_instance].get();
+    Vector3f diag = _sitl->mag_diag[i].get();
     if (diag.is_zero()) {
         diag = {1,1,1};
     }
     const Vector3f &diagonals = diag;
-    const Vector3f &offdiagonals = _sitl->mag_offdiag[sitl_instance];
+    const Vector3f &offdiagonals = _sitl->mag_offdiag[i];
     
     if (diagonals == _last_dia && offdiagonals == _last_odi) {
         return;
@@ -120,27 +125,35 @@ void AP_Compass_SITL::_timer()
         new_mag_data = buffer[best_index].data;
     }
 
-        _setup_eliptical_correcion();
-        Vector3f f = (_eliptical_corr * new_mag_data) - _sitl->mag_ofs[sitl_instance].get();
+    for (uint8_t i=0; i<_num_compass; i++) {
+        _setup_eliptical_correcion(i);
+        Vector3f f = (_eliptical_corr * new_mag_data) - _sitl->mag_ofs[i].get();
         // rotate compass
-        f.rotate_inverse((enum Rotation)_sitl->mag_orient[sitl_instance].get());
+        f.rotate_inverse((enum Rotation)_sitl->mag_orient[i].get());
         f.rotate(get_board_orientation());
         // scale the compass to simulate sensor scale factor errors
-        f *= _sitl->mag_scaling[sitl_instance];
+        f *= _sitl->mag_scaling[i];
 
-        switch (_sitl->mag_fail[sitl_instance]) {
+        switch (_sitl->mag_fail[i]) {
         case 0:
-            accumulate_sample(f, 10);
-            _last_data = f;
+            accumulate_sample(f, _compass_instance[i], 10);
+            _last_data[i] = f;
             break;
         case 1:
             // no data
             break;
         case 2:
             // frozen compass
-            accumulate_sample(_last_data, 10);
+            accumulate_sample(_last_data[i], _compass_instance[i], 10);
             break;
         }
+    }
 }
 
+void AP_Compass_SITL::read()
+{
+    for (uint8_t i=0; i<_num_compass; i++) {
+        drain_accumulated_samples(_compass_instance[i], nullptr);
+    }
+}
 #endif  // AP_COMPASS_SITL_ENABLED

@@ -13,9 +13,8 @@
 # limitations under the License.
 
 """Test files include a copyright notice."""
-import pytest
-
 from ament_copyright.main import main
+import pytest
 
 
 @pytest.mark.copyright

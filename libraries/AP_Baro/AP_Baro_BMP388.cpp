@@ -16,6 +16,7 @@
 
 #if AP_BARO_BMP388_ENABLED
 
+#include <utility>
 #include <AP_Math/AP_Math.h>
 
 extern const AP_HAL::HAL &hal;
@@ -52,15 +53,20 @@ extern const AP_HAL::HAL &hal;
 #define BMP388_REG_CAL_P     0x36
 #define BMP388_REG_CAL_T     0x31
 
-AP_Baro_BMP388::AP_Baro_BMP388(AP_Baro &baro, AP_HAL::Device &_dev)
+AP_Baro_BMP388::AP_Baro_BMP388(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> _dev)
     : AP_Baro_Backend(baro)
-    , dev(&_dev)
+    , dev(std::move(_dev))
 {
 }
 
-AP_Baro_Backend *AP_Baro_BMP388::probe(AP_Baro &baro, AP_HAL::Device &_dev)
+AP_Baro_Backend *AP_Baro_BMP388::probe(AP_Baro &baro,
+                                       AP_HAL::OwnPtr<AP_HAL::Device> _dev)
 {
-    AP_Baro_BMP388 *sensor = NEW_NOTHROW AP_Baro_BMP388(baro, _dev);
+    if (!_dev) {
+        return nullptr;
+    }
+
+    AP_Baro_BMP388 *sensor = NEW_NOTHROW AP_Baro_BMP388(baro, std::move(_dev));
     if (!sensor || !sensor->init()) {
         delete sensor;
         return nullptr;
@@ -122,6 +128,8 @@ bool AP_Baro_BMP388::init()
     return true;
 }
 
+
+
 //  accumulate a new sensor reading
 void AP_Baro_BMP388::timer(void)
 {
@@ -130,20 +138,14 @@ void AP_Baro_BMP388::timer(void)
     if (!read_registers(BMP388_REG_STATUS, buf, sizeof(buf))) {
         return;
     }
-
-    // inexplicably, some versions of GCC believe buf dies after a
-    // call.  Retrieve what we need from it beforehand to avoid a
-    // warning.
     const uint8_t status = buf[0];
-    const uint32_t pressure_data = (buf[3] << 16) | (buf[2] << 8) | buf[1];
-    const uint32_t temperature_data = (buf[6] << 16) | (buf[5] << 8) | buf[4];
     if ((status & 0x20) != 0) {
         // we have pressure data
-        update_pressure(pressure_data);
+        update_pressure((buf[3] << 16) | (buf[2] << 8) | buf[1]);
     }
     if ((status & 0x40) != 0) {
         // we have temperature data
-        update_temperature(temperature_data);
+        update_temperature((buf[6] << 16) | (buf[5] << 8) | buf[4]);
     }
 
     dev->check_next_register();

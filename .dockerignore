@@ -1,6 +1,5 @@
 # Docker context ignore list
 .azure
-.cache
 .github
 .git
 .idea

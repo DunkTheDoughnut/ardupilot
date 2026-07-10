@@ -55,7 +55,6 @@ def build(bld):
                      'Filter',
                      'AP_InternalError',
                      'AP_Airspeed',
-                     'AP_LightWareSerial',
                      'AP_RangeFinder',
                      'AP_ROMFS',
                      'AP_TemperatureSensor',
@@ -86,8 +85,7 @@ def build(bld):
                      'GCS_MAVLink',
                      'AP_Relay',
                      'AP_MultiHeap',
-                     'AP_DAC',
-                     'AP_Servo_Telem',
+                     'AP_DAC'
                      ]
 
     bld.ap_stlib(

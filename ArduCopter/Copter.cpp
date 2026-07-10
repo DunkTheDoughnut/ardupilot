@@ -316,7 +316,9 @@ bool Copter::set_target_pos_NED(const Vector3f& target_pos_ned_m, bool use_yaw, 
         return false;
     }
 
-    return mode_guided.set_pos_NED_m(target_pos_ned_m.topostype(), use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), yaw_relative, is_terrain_alt);
+    const Vector3f pos_neu_m{target_pos_ned_m.x, target_pos_ned_m.y, -target_pos_ned_m.z};
+
+    return mode_guided.set_pos_NEU_m(pos_neu_m, use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), yaw_relative, is_terrain_alt);
 }
 
 // set target position and velocity (for use by scripting)
@@ -327,7 +329,10 @@ bool Copter::set_target_posvel_NED(const Vector3f& target_pos_ned_m, const Vecto
         return false;
     }
 
-    return mode_guided.set_pos_vel_accel_NED_m(target_pos_ned_m.topostype(), target_vel_ned_ms, Vector3f());
+    const Vector3f pos_neu_m{target_pos_ned_m.x, target_pos_ned_m.y, -target_pos_ned_m.z};
+    const Vector3f vel_neu_ms{target_vel_ned_ms.x, target_vel_ned_ms.y, -target_vel_ned_ms.z};
+
+    return mode_guided.set_pos_vel_accel_NEU_m(pos_neu_m, vel_neu_ms, Vector3f());
 }
 
 // set target position, velocity and acceleration (for use by scripting)
@@ -338,26 +343,22 @@ bool Copter::set_target_posvelaccel_NED(const Vector3f& target_pos_ned_m, const 
         return false;
     }
 
-    return mode_guided.set_pos_vel_accel_NED_m(target_pos_ned_m.topostype(), target_vel_ned_ms, target_accel_ned_mss, use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), yaw_relative);
+    const Vector3f pos_neu_m{target_pos_ned_m.x, target_pos_ned_m.y, -target_pos_ned_m.z};
+    const Vector3f vel_neu_ms{target_vel_ned_ms.x, target_vel_ned_ms.y, -target_vel_ned_ms.z};
+    const Vector3f accel_neu_mss{target_accel_ned_mss.x, target_accel_ned_mss.y, -target_accel_ned_mss.z};
+
+    return mode_guided.set_pos_vel_accel_NEU_m(pos_neu_m, vel_neu_ms, accel_neu_mss, use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), yaw_relative);
 }
 
-bool Copter::set_target_velocity_NED(const Vector3f& target_vel_ned_ms, bool align_yaw_to_target)
+bool Copter::set_target_velocity_NED(const Vector3f& target_vel_ned_ms)
 {
     // exit if vehicle is not in Guided mode or Auto-Guided mode
     if (!flightmode->in_guided_mode()) {
         return false;
     }
 
-    // optionally line up the copter with the velocity vector
-    float yaw_rads = 0.0f;
-    if (align_yaw_to_target) {
-        const float speed_sq = target_vel_ned_ms.xy().length_squared();
-        if (copter.position_ok() && (speed_sq > (YAW_LOOK_AHEAD_MIN_SPEED_MS * YAW_LOOK_AHEAD_MIN_SPEED_MS))) {
-            yaw_rads = atan2f(target_vel_ned_ms.y, target_vel_ned_ms.x);
-        }
-    }
-
-    mode_guided.set_vel_accel_NED_m(target_vel_ned_ms, Vector3f(), align_yaw_to_target, yaw_rads);
+    const Vector3f vel_neu_ms{target_vel_ned_ms.x, target_vel_ned_ms.y, -target_vel_ned_ms.z};
+    mode_guided.set_vel_NEU_ms(vel_neu_ms);
     return true;
 }
 
@@ -369,7 +370,10 @@ bool Copter::set_target_velaccel_NED(const Vector3f& target_vel_ned_ms, const Ve
         return false;
     }
 
-    mode_guided.set_vel_accel_NED_m(target_vel_ned_ms, target_accel_ned_mss, use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), relative_yaw);
+    const Vector3f vel_neu_ms{target_vel_ned_ms.x, target_vel_ned_ms.y, -target_vel_ned_ms.z};
+    const Vector3f accel_neu_mss{target_accel_ned_mss.x, target_accel_ned_mss.y, -target_accel_ned_mss.z};
+
+    mode_guided.set_vel_accel_NEU_m(vel_neu_ms, accel_neu_mss, use_yaw, radians(yaw_deg), use_yaw_rate, radians(yaw_rate_degs), relative_yaw);
     return true;
 }
 
@@ -406,25 +410,6 @@ bool Copter::set_target_rate_and_throttle(float roll_rate_dps, float pitch_rate_
 
     // Pass to guided mode
     mode_guided.set_angle(q, ang_vel_body, throttle, true);
-    return true;
-}
-
-// set target roll pitch and yaw angles and roll pitch and yaw rates with throttle (for use by scripting)
-bool Copter::set_target_angle_and_rate_and_throttle(float roll_deg, float pitch_deg, float yaw_deg, float roll_rate_degs, float pitch_rate_degs, float yaw_rate_degs, float throttle)
-{
-    // exit if vehicle is not in Guided mode or Auto-Guided mode
-    if (!flightmode->in_guided_mode()) {
-        return false;
-    }
-
-    Quaternion q;
-    q.from_euler(radians(roll_deg),radians(pitch_deg),radians(yaw_deg));
-
-    // Convert from degrees per second to radians per second
-    Vector3f ang_vel_body_degs { roll_rate_degs, pitch_rate_degs, yaw_rate_degs };
-    ang_vel_body_degs *= DEG_TO_RAD;
-
-    mode_guided.set_angle(q, ang_vel_body_degs, throttle, true);
     return true;
 }
 
@@ -651,8 +636,6 @@ void Copter::loop_rate_logging()
     if (should_log(MASK_LOG_IMU_FAST)) {
         AP::ins().Write_IMU();
     }
-
-    motors->Log_Write_SPOL();
 }
 
 // ten_hz_logging_loop
@@ -693,7 +676,7 @@ void Copter::ten_hz_logging_loop()
     if (should_log(MASK_LOG_RCOUT)) {
         logger.Write_RCOUT();
     }
-    if (should_log(MASK_LOG_NTUN) && (flightmode->requires_position() || landing_with_GPS() || !flightmode->has_manual_throttle())) {
+    if (should_log(MASK_LOG_NTUN) && (flightmode->requires_GPS() || landing_with_GPS() || !flightmode->has_manual_throttle())) {
         pos_control->write_log();
     }
     if (should_log(MASK_LOG_IMU) || should_log(MASK_LOG_IMU_FAST) || should_log(MASK_LOG_IMU_RAW)) {
@@ -815,7 +798,7 @@ void Copter::one_hz_loop()
     if (!using_rate_thread) {
         attitude_control->set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
     }
-    pos_control->D_get_accel_pid().set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
+    pos_control->get_accel_U_pid().set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
 #if AC_CUSTOMCONTROL_MULTI_ENABLED
     custom_control.set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
 #endif
@@ -965,13 +948,13 @@ bool Copter::get_wp_crosstrack_error_m(float &xtrack_error) const
 }
 
 // get the target earth-frame angular velocities in rad/s (Z-axis component used by some gimbals)
-bool Copter::get_rate_ef_targets(Vector3f& rate_ef_targets_rads) const
+bool Copter::get_rate_ef_targets(Vector3f& rate_ef_targets) const
 {
     // always returns zero vector if landed or disarmed
     if (copter.ap.land_complete) {
-        rate_ef_targets_rads.zero();
+        rate_ef_targets.zero();
     } else {
-        rate_ef_targets_rads = attitude_control->get_rate_ef_target_rads();
+        rate_ef_targets = attitude_control->get_rate_ef_targets();
     }
     return true;
 }
@@ -981,6 +964,7 @@ bool Copter::get_rate_ef_targets(Vector3f& rate_ef_targets_rads) const
  */
 Copter::Copter(void)
     :
+    flight_modes(&g.flight_mode1),
     pos_variance_filt(FS_EKF_FILT_DEFAULT),
     vel_variance_filt(FS_EKF_FILT_DEFAULT),
     flightmode(&mode_stabilize),

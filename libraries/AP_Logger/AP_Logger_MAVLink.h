@@ -113,7 +113,7 @@ private:
         uint8_t state_sent_max;
     } stats;
 
-    // these methods are used for mavlink system status and arming checks
+    // this method is used when reporting system status over mavlink
     bool logging_enabled() const override { return true; }
     bool logging_failed() const override;
 

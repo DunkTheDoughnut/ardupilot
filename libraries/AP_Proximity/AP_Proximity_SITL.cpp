@@ -118,11 +118,11 @@ bool AP_Proximity_SITL::get_distance_to_fence(float angle_deg, float &distance) 
 }
 
 // get maximum and minimum distances (in meters) of primary sensor
-float AP_Proximity_SITL::distance_max_m() const
+float AP_Proximity_SITL::distance_max() const
 {
     return PROXIMITY_MAX_RANGE;
 }
-float AP_Proximity_SITL::distance_min_m() const
+float AP_Proximity_SITL::distance_min() const
 {
     return 0.0f;
 }

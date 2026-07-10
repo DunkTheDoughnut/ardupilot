@@ -8,12 +8,12 @@ AP_FLAKE8_CLEAN
 
 """
 
-import optparse
-import os
-import re
-import select
 import sys
 import time
+import optparse
+import os
+import select
+import re
 
 os.environ['MAVLINK20'] = '1'
 
@@ -219,7 +219,7 @@ class TestLoweheiser(object):
             return
         self.last_heartbeat_sent = now
 
-        # self.progress("Sending heartbeat")
+        # self.progress("Sending heatbeat")
         self.conn.mav.heartbeat_send(
             mavutil.mavlink.MAV_TYPE_GCS,
             mavutil.mavlink.MAV_AUTOPILOT_GENERIC,

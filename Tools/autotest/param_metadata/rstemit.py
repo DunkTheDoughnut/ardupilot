@@ -227,7 +227,8 @@ This list is automatically generated from the latest ardupilot source code, and 
            reference=reference)
 
         for param in g.params:
-            if not self.should_emit_param(param):
+            if getattr(param, "Legacy", False):
+                # do not emit legacy parameters to the Wiki
                 continue
             if not hasattr(param, 'DisplayName') or not hasattr(param, 'Description'):
                 continue

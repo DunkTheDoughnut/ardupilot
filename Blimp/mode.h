@@ -80,7 +80,7 @@ public:
     {
         return 0.0f;
     }
-    virtual float crosstrack_error_m() const
+    virtual float crosstrack_error() const
     {
         return 0.0f;
     }
@@ -106,6 +106,7 @@ protected:
     // convenience references to avoid code churn in conversion:
     Parameters &g;
     ParametersG2 &g2;
+    AP_InertialNav &inertial_nav;
     AP_AHRS &ahrs;
     Fins *&motors;
     Loiter *&loiter;
@@ -155,7 +156,7 @@ protected:
 
     const char *name() const override
     {
-        return "Manual";
+        return "MANUAL";
     }
     const char *name4() const override
     {
@@ -199,7 +200,7 @@ protected:
 
     const char *name() const override
     {
-        return "Velocity";
+        return "VELOCITY";
     }
     const char *name4() const override
     {
@@ -244,7 +245,7 @@ protected:
 
     const char *name() const override
     {
-        return "Loiter";
+        return "LOITER";
     }
     const char *name4() const override
     {
@@ -288,7 +289,7 @@ protected:
 
     const char *name() const override
     {
-        return "Land";
+        return "LAND";
     }
     const char *name4() const override
     {

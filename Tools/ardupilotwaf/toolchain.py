@@ -139,7 +139,10 @@ def configure(cfg):
         return
 
     if cfg.env.TOOLCHAIN == 'native':
-        cfg.load('compiler_cxx compiler_c gccdeps')
+        cfg.load('compiler_cxx compiler_c')
+
+        if not cfg.options.disable_gccdeps:
+            cfg.load('gccdeps')
 
         return
 
@@ -149,12 +152,15 @@ def configure(cfg):
         cfg.find_program('ar', var='AR', quiet=True)
     else:
         cfg.find_program('%s-ar' % cfg.env.TOOLCHAIN, var='AR', quiet=True)
-    cfg.load('compiler_cxx compiler_c gccdeps')
+    cfg.load('compiler_cxx compiler_c')
 
     if sys.platform.startswith("cygwin"):
         cfg.find_program('nm', var='NM')
     else:
         cfg.find_program('%s-nm' % cfg.env.TOOLCHAIN, var='NM')
+
+    if not cfg.options.disable_gccdeps:
+        cfg.load('gccdeps')
 
     if cfg.env.COMPILER_CC == 'clang':
         cfg.env.CFLAGS += cfg.env.CLANG_FLAGS

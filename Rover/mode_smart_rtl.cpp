@@ -1,12 +1,5 @@
 #include "Rover.h"
 
-// Return true if this mode is enabled, used by MAVLink available mode
-bool ModeSmartRTL::enabled() const
-{
-    // Smart RTL mode requires smart RTL lib
-    return g2.smart_rtl.enabled();
-}
-
 bool ModeSmartRTL::_enter()
 {
     // SmartRTL requires EKF (not DCM)
@@ -16,7 +9,7 @@ bool ModeSmartRTL::_enter()
     }
 
     // refuse to enter SmartRTL if smart RTL's home has not been set
-    if (!enabled() || !g2.smart_rtl.is_active()) {
+    if (!g2.smart_rtl.is_active()) {
         return false;
     }
 
@@ -51,7 +44,7 @@ void ModeSmartRTL::update()
         case SmartRTLState::PathFollow:
             // load point if required
             if (_load_point) {
-                Vector3p dest_NED;
+                Vector3f dest_NED;
                 if (!g2.smart_rtl.pop_point(dest_NED)) {
                     // if not more points, we have reached home
                     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Reached destination");
@@ -59,9 +52,9 @@ void ModeSmartRTL::update()
                     break;
                 } else {
                     // peek at the next point.  this can fail if the IO task currently has the path semaphore
-                    Vector3p next_dest_NED;
+                    Vector3f next_dest_NED;
                     if (g2.smart_rtl.peek_point(next_dest_NED)) {
-                        if (!g2.wp_nav.set_desired_location_NED(dest_NED.tofloat(), next_dest_NED.tofloat())) {
+                        if (!g2.wp_nav.set_desired_location_NED(dest_NED, next_dest_NED)) {
                             // this should never happen because the EKF origin should already be set
                             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SmartRTL: failed to set destination");
                             smart_rtl_state = SmartRTLState::Failure;
@@ -69,7 +62,7 @@ void ModeSmartRTL::update()
                         }
                     } else {
                         // no next point so add only immediate point
-                        if (!g2.wp_nav.set_desired_location_NED(dest_NED.tofloat())) {
+                        if (!g2.wp_nav.set_desired_location_NED(dest_NED)) {
                             // this should never happen because the EKF origin should already be set
                             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SmartRTL: failed to set destination");
                             smart_rtl_state = SmartRTLState::Failure;
@@ -131,9 +124,9 @@ bool ModeSmartRTL::get_desired_location(Location& destination) const
 }
 
 // set desired speed in m/s
-bool ModeSmartRTL::set_desired_speed(float speed_ms)
+bool ModeSmartRTL::set_desired_speed(float speed)
 {
-    return g2.wp_nav.set_speed_max(speed_ms);
+    return g2.wp_nav.set_speed_max(speed);
 }
 
 // save current position for use by the smart_rtl flight mode

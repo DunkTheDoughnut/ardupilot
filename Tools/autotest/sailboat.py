@@ -8,6 +8,7 @@ AP_FLAKE8_CLEAN
 import os
 
 from rover import AutoTestRover
+
 from vehicle_test_suite import AutoTestTimeoutException
 from vehicle_test_suite import PreconditionFailedException
 

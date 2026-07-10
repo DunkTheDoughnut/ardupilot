@@ -4,7 +4,6 @@ AP_FLAKE8_CLEAN
 
 import os
 import time
-
 import emitter
 
 

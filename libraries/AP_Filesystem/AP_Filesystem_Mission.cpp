@@ -206,7 +206,8 @@ int AP_Filesystem_Mission::stat(const char *name, struct stat *stbuf)
         return -1;
     }
     memset(stbuf, 0, sizeof(*stbuf));
-    stbuf->st_size = sizeof(struct header) + get_num_items(mtype) * MAVLINK_MSG_ID_MISSION_ITEM_INT_LEN;
+    // give fixed size to avoid needing to scan entire file
+    stbuf->st_size = 1024*1024;
     return 0;
 }
 

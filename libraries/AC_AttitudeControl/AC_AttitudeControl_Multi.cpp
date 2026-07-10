@@ -12,7 +12,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_RLL_P
     // @DisplayName: Roll axis rate controller P gain
     // @Description: Roll axis rate controller P gain.  Corrects in proportion to the difference between the desired roll rate vs actual roll rate
-    // @Units: s/rad
     // @Range: 0.01 0.5
     // @Increment: 0.005
     // @User: Standard
@@ -20,7 +19,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_RLL_I
     // @DisplayName: Roll axis rate controller I gain
     // @Description: Roll axis rate controller I gain.  Corrects long-term difference in desired roll rate vs actual roll rate
-    // @Units: 1/rad
     // @Range: 0.01 2.0
     // @Increment: 0.01
     // @User: Standard
@@ -35,7 +33,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_RLL_D
     // @DisplayName: Roll axis rate controller D gain
     // @Description: Roll axis rate controller D gain.  Compensates for short-term change in desired roll rate vs actual roll rate
-    // @Units: s^2/rad
     // @Range: 0.0 0.05
     // @Increment: 0.001
     // @User: Standard
@@ -43,7 +40,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_RLL_FF
     // @DisplayName: Roll axis rate controller feed forward
     // @Description: Roll axis rate controller feed forward
-    // @Units: s/rad
     // @Range: 0 0.5
     // @Increment: 0.001
     // @User: Standard
@@ -88,7 +84,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_RLL_D_FF
     // @DisplayName: Roll Derivative FeedForward Gain
     // @Description: FF D Gain which produces an output that is proportional to the rate of change of the target
-    // @Units: s^2/rad
     // @Range: 0 0.02
     // @Increment: 0.0001
     // @User: Advanced
@@ -110,7 +105,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_PIT_P
     // @DisplayName: Pitch axis rate controller P gain
     // @Description: Pitch axis rate controller P gain.  Corrects in proportion to the difference between the desired pitch rate vs actual pitch rate output
-    // @Units: s/rad
     // @Range: 0.01 0.50
     // @Increment: 0.005
     // @User: Standard
@@ -118,7 +112,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_PIT_I
     // @DisplayName: Pitch axis rate controller I gain
     // @Description: Pitch axis rate controller I gain.  Corrects long-term difference in desired pitch rate vs actual pitch rate
-    // @Units: 1/rad
     // @Range: 0.01 2.0
     // @Increment: 0.01
     // @User: Standard
@@ -133,7 +126,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_PIT_D
     // @DisplayName: Pitch axis rate controller D gain
     // @Description: Pitch axis rate controller D gain.  Compensates for short-term change in desired pitch rate vs actual pitch rate
-    // @Units: s^2/rad
     // @Range: 0.0 0.05
     // @Increment: 0.001
     // @User: Standard
@@ -141,7 +133,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_PIT_FF
     // @DisplayName: Pitch axis rate controller feed forward
     // @Description: Pitch axis rate controller feed forward
-    // @Units: s/rad
     // @Range: 0 0.5
     // @Increment: 0.001
     // @User: Standard
@@ -186,7 +177,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_PIT_D_FF
     // @DisplayName: Pitch Derivative FeedForward Gain
     // @Description: FF D Gain which produces an output that is proportional to the rate of change of the target
-    // @Units: s^2/rad
     // @Range: 0 0.02
     // @Increment: 0.0001
     // @User: Advanced
@@ -208,7 +198,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_YAW_P
     // @DisplayName: Yaw axis rate controller P gain
     // @Description: Yaw axis rate controller P gain.  Corrects in proportion to the difference between the desired yaw rate vs actual yaw rate
-    // @Units: s/rad
     // @Range: 0.10 2.50
     // @Increment: 0.005
     // @User: Standard
@@ -216,7 +205,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_YAW_I
     // @DisplayName: Yaw axis rate controller I gain
     // @Description: Yaw axis rate controller I gain.  Corrects long-term difference in desired yaw rate vs actual yaw rate
-    // @Units: 1/rad
     // @Range: 0.010 1.0
     // @Increment: 0.01
     // @User: Standard
@@ -231,7 +219,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_YAW_D
     // @DisplayName: Yaw axis rate controller D gain
     // @Description: Yaw axis rate controller D gain.  Compensates for short-term change in desired yaw rate vs actual yaw rate
-    // @Units: s^2/rad
     // @Range: 0.000 0.02
     // @Increment: 0.001
     // @User: Standard
@@ -239,7 +226,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_YAW_FF
     // @DisplayName: Yaw axis rate controller feed forward
     // @Description: Yaw axis rate controller feed forward
-    // @Units: s/rad
     // @Range: 0 0.5
     // @Increment: 0.001
     // @User: Standard
@@ -284,7 +270,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Param: RAT_YAW_D_FF
     // @DisplayName: Yaw Derivative FeedForward Gain
     // @Description: FF D Gain which produces an output that is proportional to the rate of change of the target
-    // @Units: s^2/rad
     // @Range: 0 0.02
     // @Increment: 0.0001
     // @User: Advanced
@@ -335,8 +320,8 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     AP_GROUPEND
 };
 
-AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, AP_MotorsMulticopter& motors) :
-    AC_AttitudeControl(ahrs, motors),
+AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_MultiCopter &aparm, AP_MotorsMulticopter& motors) :
+    AC_AttitudeControl(ahrs, aparm, motors),
     _motors_multi(motors)
 {
     AP_Param::setup_object_defaults(this, var_info);
@@ -470,18 +455,24 @@ void AC_AttitudeControl_Multi::rate_controller_run_dt(const Vector3f& gyro_rads,
     _rate_gyro_rads = gyro_rads;
     _rate_gyro_time_us = AP_HAL::micros64();
 
-    _motors.set_roll(get_rate_roll_pid().update_all(ang_vel_body.x, gyro_rads.x,  dt, _motors.limit.roll, _pd_scale.x, _i_scale.x) + _actuator_sysid.x);
+    _motors.set_roll(get_rate_roll_pid().update_all(ang_vel_body.x, gyro_rads.x,  dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
     _motors.set_roll_ff(get_rate_roll_pid().get_ff());
 
-    _motors.set_pitch(get_rate_pitch_pid().update_all(ang_vel_body.y, gyro_rads.y,  dt, _motors.limit.pitch, _pd_scale.y, _i_scale.y) + _actuator_sysid.y);
+    _motors.set_pitch(get_rate_pitch_pid().update_all(ang_vel_body.y, gyro_rads.y,  dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
     _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
 
-    _motors.set_yaw(get_rate_yaw_pid().update_all(ang_vel_body.z, gyro_rads.z,  dt, _motors.limit.yaw, _pd_scale.z, _i_scale.z) + _actuator_sysid.z);
+    _motors.set_yaw(get_rate_yaw_pid().update_all(ang_vel_body.z, gyro_rads.z,  dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
     _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
 
     _pd_scale_used = _pd_scale;
-    _i_scale_used = _i_scale;
-    _angle_P_scale_used = _angle_P_scale;
+}
+
+// reset the rate controller target loop updates
+void AC_AttitudeControl_Multi::rate_controller_target_reset()
+{
+    _sysid_ang_vel_body_rads.zero();
+    _actuator_sysid.zero();
+    _pd_scale = VECTORF_111;
 }
 
 // run the rate controller using the configured _dt and latest gyro_rads

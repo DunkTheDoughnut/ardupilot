@@ -24,7 +24,6 @@
 
 #include "SIM_Loweheiser.h"
 #include "SITL.h"
-#include "SIM_Aircraft.h"
 
 #include <GCS_MAVLink/GCS.h>
 
@@ -37,14 +36,14 @@ Loweheiser::Loweheiser() : SerialDevice::SerialDevice()
 {
 }
 
-void Loweheiser::update(const class Aircraft &aircraft)
+void Loweheiser::update()
 {
     // if (!_enabled.get()) {
     //     return;
     // }
     maybe_send_heartbeat();
     update_receive();
-    update_send(aircraft);
+    update_send();
 }
 
 void Loweheiser::maybe_send_heartbeat()
@@ -182,7 +181,7 @@ void Loweheiser::update_fuel_level()
     fuel_level -= fuel_delta;
 }
 
-void Loweheiser::update_send(const class Aircraft &aircraft)
+void Loweheiser::update_send()
 {
     const uint32_t now = AP_HAL::millis();
     if (now - last_sent_ms < 200) {
@@ -283,8 +282,8 @@ void Loweheiser::update_send(const class Aircraft &aircraft)
     // controlled by param2, this turns on/off the DC/DC component which
     // powers the efi
     if (autopilot_desired_engine_run_state == EngineRunState::ON) {
-        efi_baro = aircraft.ambient_outside_pressure_Pascal() / 1000.0;
-        efi_mat = aircraft.ambient_outside_temperature_degC();
+        efi_baro = AP::baro().get_pressure() / 1000.0;
+        efi_mat = AP::baro().get_temperature();
         efi_clt = generatorengine.temperature;
         efi_tps = MAX(throttle_output, 40);
         efi_batt = 12.5;

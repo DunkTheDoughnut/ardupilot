@@ -68,7 +68,7 @@ const AP_Param::GroupInfo AP_OpenDroneID::var_info[] = {
     // @Param: OPTIONS
     // @DisplayName: OpenDroneID options
     // @Description: Options for OpenDroneID subsystem
-    // @Bitmask: 0:EnforcePreArmChecks, 1:AllowNonGPSPosition, 2:LockUASIDOnFirstBasicIDRx
+    // @Bitmask: 0:EnforceArming, 1:AllowNonGPSPosition, 2:LockUASIDOnFirstBasicIDRx
     AP_GROUPINFO("OPTIONS", 4, AP_OpenDroneID, _options, 0),
 
     // @Param: BARO_ACC
@@ -162,7 +162,7 @@ bool AP_OpenDroneID::pre_arm_check(char* failmsg, uint8_t failmsg_len)
 {
     WITH_SEMAPHORE(_sem);
 
-    if (!option_enabled(Options::EnforcePreArmChecks)) {
+    if (!option_enabled(Options::EnforceArming)) {
         return true;
     }
 
@@ -225,9 +225,7 @@ void AP_OpenDroneID::update()
     const bool armed = hal.util->get_soft_armed();
     if (armed && !_was_armed) {
         // use arm location as takeoff location
-        // if the AHRS can't give us a result it will pass GPS
-        // location in _takeoff_location while returning false:
-        UNUSED_RESULT(AP::ahrs().get_location(_takeoff_location));
+        AP::ahrs().get_location(_takeoff_location);
     }
     _was_armed = armed;
 
@@ -341,8 +339,8 @@ void AP_OpenDroneID::send_location_message()
     const auto &barometer = AP::baro();
     const auto &gps = AP::gps();
 
-    const AP_GPS_FixType gps_status = gps.status();
-    const bool got_bad_gps_fix = (gps_status < AP_GPS_FixType::FIX_3D);
+    const AP_GPS::GPS_Status gps_status = gps.status();
+    const bool got_bad_gps_fix = (gps_status < AP_GPS::GPS_Status::GPS_OK_FIX_3D);
     const bool armed = hal.util->get_soft_armed();
 
     Location current_location;

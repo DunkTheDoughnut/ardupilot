@@ -15,6 +15,8 @@
 #define AP_CHECK_FIRMWARE_ENABLED AP_OPENDRONEID_ENABLED
 #endif
 
+#if AP_CHECK_FIRMWARE_ENABLED
+
 enum class check_fw_result_t : uint8_t {
     CHECK_FW_OK = 0,
     FAIL_REASON_NO_APP_SIG = 10,
@@ -27,8 +29,6 @@ enum class check_fw_result_t : uint8_t {
     FAIL_REASON_BAD_FIRMWARE_SIGNATURE = 17,
     FAIL_REASON_VERIFICATION = 18,
 };
-
-#if AP_CHECK_FIRMWARE_ENABLED
 
 #ifndef FW_MAJOR
 #define APP_FW_MAJOR 0

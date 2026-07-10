@@ -2,11 +2,11 @@
 # test ccache efficiency building two similar boards
 # AP_FLAKE8_CLEAN
 
-import argparse
-import os
-import re
 import subprocess
+import re
+import argparse
 import sys
+import os
 
 
 def ccache_stats():

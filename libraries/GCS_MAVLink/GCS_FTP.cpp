@@ -108,11 +108,7 @@ bool GCS_FTP::send_reply(const Transaction &reply)
     if (!HAVE_PAYLOAD_SPACE(reply.chan, FILE_TRANSFER_PROTOCOL)) {
         return false;
     }
-    mavlink_file_transfer_protocol_t pkt {};
-    pkt.target_network = 0;
-    pkt.target_system = reply.sysid;
-    pkt.target_component = reply.compid;
-    uint8_t *payload = pkt.payload;
+    uint8_t payload[251] = {};
     put_le16_ptr(payload, reply.seq_number);
     payload[2] = reply.session;
     payload[3] = static_cast<uint8_t>(reply.opcode);
@@ -120,8 +116,11 @@ bool GCS_FTP::send_reply(const Transaction &reply)
     payload[5] = static_cast<uint8_t>(reply.req_opcode);
     payload[6] = reply.burst_complete ? 1 : 0;
     put_le32_ptr(&payload[8], reply.offset);
-    memcpy(&pkt.payload[12], reply.data, sizeof(reply.data));
-    mavlink_msg_file_transfer_protocol_send_struct(reply.chan, &pkt);
+    memcpy(&payload[12], reply.data, sizeof(reply.data));
+    mavlink_msg_file_transfer_protocol_send(
+        reply.chan,
+        0, reply.sysid, reply.compid,
+        payload);
     return true;
 }
 
@@ -146,7 +145,7 @@ void GCS_FTP::Session::push_reply(Transaction &reply)
     last_send_ms = AP_HAL::millis(); // Used to detect active FTP session
 
     while (!send_reply(reply)) {
-        hal.scheduler->delay_microseconds(100);
+        hal.scheduler->delay(2);
     }
 
     if (reply.req_opcode == FTP_OP::TerminateSession) {
@@ -285,21 +284,14 @@ void GCS_FTP::Session::list_dir(Transaction &request, Transaction &response)
 
 /*
   close a session
-
-  returns the error code friom the underlying close() call, or zero (no error) if the
-  file was closed already
  */
-int GCS_FTP::Session::close(void)
+void GCS_FTP::Session::close(void)
 {
-    int result = 0;
-
     if (fd != -1) {
-        result = AP::FS().close(fd);
+        AP::FS().close(fd);
         fd = -1;
     }
     last_send_ms = 0;
-
-    return result;
 }
 
 /*
@@ -325,13 +317,8 @@ bool GCS_FTP::Session::handle_request(Transaction &request, Transaction &reply)
         reply.opcode = FTP_OP::Ack;
         break;
     case FTP_OP::TerminateSession:
-        if (close()) {
-            // close() operation indicated an error, errno
-            // was set by close() itself
-            GCS_FTP::error(reply, FTP_ERROR::FailErrno);
-        } else {
-            reply.opcode = FTP_OP::Ack;
-        }
+        close();
+        reply.opcode = FTP_OP::Ack;
         break;
     case FTP_OP::ListDirectory:
         list_dir(request, reply);
@@ -343,7 +330,7 @@ bool GCS_FTP::Session::handle_request(Transaction &request, Transaction &reply)
             // no activity for 3s, assume client has
             // timed out receiving open reply, close
             // the file
-            close();    // error code ignored
+            close();
             fd = -1;
         }
         if (fd != -1) {
@@ -448,7 +435,7 @@ bool GCS_FTP::Session::handle_request(Transaction &request, Transaction &reply)
 
         // actually open the file
         fd = AP::FS().open((char *)request.data,
-                           (request.opcode == FTP_OP::CreateFile) ? O_WRONLY|O_CREAT|O_TRUNC : O_WRONLY|O_CREAT);
+                           (request.opcode == FTP_OP::CreateFile) ? O_WRONLY|O_CREAT|O_TRUNC : O_WRONLY);
         if (fd == -1) {
             GCS_FTP::error(reply, FTP_ERROR::FailErrno);
             break;
@@ -591,13 +578,11 @@ bool GCS_FTP::Session::handle_request(Transaction &request, Transaction &reply)
         }
 
         // this transfer size is enough for a full parameter file with max parameters
-        const uint32_t transfer_size = 2000;
-        reply.offset = request.offset;
+        const uint32_t transfer_size = 500;
         for (uint32_t i = 0; (i < transfer_size); i++) {
             // fill the buffer
             const ssize_t read_bytes = AP::FS().read(fd, reply.data, MIN(sizeof(reply.data), max_read));
             if (read_bytes == -1) {
-                reply.burst_complete = true;
                 GCS_FTP::error(reply, FTP_ERROR::FailErrno);
                 break;
             }
@@ -608,27 +593,26 @@ bool GCS_FTP::Session::handle_request(Transaction &request, Transaction &reply)
             }
 
             if (read_bytes == 0) {
-                reply.burst_complete = true;
                 GCS_FTP::error(reply, FTP_ERROR::EndOfFile);
                 break;
             }
 
             reply.opcode = FTP_OP::Ack;
-            // Signal to the client that they need to request another burst read to get more data
-            reply.burst_complete = (i == (transfer_size - 1));
+            reply.offset = request.offset + i * max_read;
+            reply.burst_complete = ((read_bytes < max_read) || (i == (transfer_size - 1)));
             reply.size = (uint8_t)read_bytes;
 
             push_reply(reply);
 
-            // update the offset for the next read
-            reply.offset += read_bytes;
+            if (read_bytes < max_read) {
+                // ensure the NACK which we send next is at the right offset
+                reply.offset += read_bytes;
+            }
 
             // prep the reply to be used again
             reply.seq_number++;
 
-            if (burst_delay_ms > 0) {
-                hal.scheduler->delay(burst_delay_ms);
-            }
+            hal.scheduler->delay(burst_delay_ms);
         }
 
         if (reply.opcode != FTP_OP::Nack) {
@@ -752,7 +736,7 @@ void GCS_FTP::worker(void)
             for (auto &s : sessions) {
                 if (s.last_send_ms != 0 &&
                     now - s.last_send_ms > FTP_SESSION_KILL_TIMEOUT) {
-                    s.close();   // error code ignored
+                    s.close();
                 }
             }
         }
@@ -766,7 +750,7 @@ void GCS_FTP::worker(void)
                     request.compid == s.compid &&
                     request.chan == s.chan) {
                     // close this session
-                    s.close();   // error code ignored
+                    s.close();
                 }
             }
             // always ACK, even if no sessions were closed
@@ -813,7 +797,7 @@ void GCS_FTP::worker(void)
                 continue;
             }
             // claim the session
-            s.close();   // error code ignored
+            s.close();
             s.session_id = request.session;
             s.sysid = request.sysid;
             s.compid = request.compid;

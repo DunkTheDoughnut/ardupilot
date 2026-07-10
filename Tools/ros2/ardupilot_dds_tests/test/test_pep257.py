@@ -13,9 +13,8 @@
 # limitations under the License.
 
 """Test Python files satisfy PEP257."""
-import pytest
-
 from ament_pep257.main import main
+import pytest
 
 
 @pytest.mark.linter

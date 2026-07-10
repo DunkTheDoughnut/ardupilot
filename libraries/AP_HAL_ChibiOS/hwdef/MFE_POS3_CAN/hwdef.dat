@@ -20,6 +20,8 @@ env AP_PERIPH 1
 # crystal frequency
 OSCILLATOR_HZ 8000000
 
+define CH_CFG_ST_FREQUENCY 1000000
+
 FLASH_SIZE_KB 2048
 
 
@@ -72,6 +74,7 @@ define HAL_USE_ADC FALSE
 define STM32_ADC_USE_ADC1 FALSE
 define HAL_DISABLE_ADC_DRIVER TRUE
 
+define HAL_NO_GPIO_IRQ
 define DMA_RESERVE_SIZE 0
 
 # enable CAN support

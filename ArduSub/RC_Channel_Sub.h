@@ -28,13 +28,7 @@ public:
     bool arming_check_throttle() const override;
     RC_Channel_Sub obj_channels[NUM_RC_CHANNELS];
     RC_Channel_Sub *channel(const uint8_t chan) override {
-        if (chan >= ARRAY_SIZE(obj_channels)) {
-            return nullptr;
-        }
-        return &obj_channels[chan];
-    }
-    const RC_Channel_Sub *channel(const uint8_t chan) const override {
-        if (chan >= ARRAY_SIZE(obj_channels)) {
+        if (chan >= NUM_RC_CHANNELS) {
             return nullptr;
         }
         return &obj_channels[chan];
@@ -66,13 +60,7 @@ public:
 
     RC_Channel_Sub obj_channels[NUM_RC_CHANNELS];
     RC_Channel_Sub *channel(const uint8_t chan) override {
-        if (chan >= ARRAY_SIZE(obj_channels)) {
-            return nullptr;
-        }
-        return &obj_channels[chan];
-    }
-    const RC_Channel_Sub *channel(const uint8_t chan) const override {
-        if (chan >= ARRAY_SIZE(obj_channels)) {
+        if (chan >= NUM_RC_CHANNELS) {
             return nullptr;
         }
         return &obj_channels[chan];

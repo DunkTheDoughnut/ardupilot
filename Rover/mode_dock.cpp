@@ -55,18 +55,11 @@ ModeDock::ModeDock(void) : Mode()
 
 #define AR_DOCK_ACCEL_MAX              20.0    // acceleration used when user has specified no acceleration limit
 
-// Return true if this mode is enabled
-bool ModeDock::enabled() const
-{
-    // Dock mode requires precland
-    return rover.precland.enabled();
-}
-
 // initialize dock mode
 bool ModeDock::_enter()
 {
     // refuse to enter the mode if dock is not in sight
-    if (!enabled() || !rover.precland.target_acquired()) {
+    if (!rover.precland.enabled() || !rover.precland.target_acquired()) {
         GCS_SEND_TEXT(MAV_SEVERITY_NOTICE, "Dock: target not acquired");
         return false;
     }
@@ -149,7 +142,7 @@ void ModeDock::update()
         return;
     }
 
-    Vector2f target_m = _dock_pos_rel_origin_m.tofloat();
+    Vector2f target_m = _dock_pos_rel_origin_m;
 
     // ***** HEADING CORRECTION *****
     // to make to vehicle dock from a given direction we simulate a virtual moving target on the line of approach
@@ -160,7 +153,7 @@ void ModeDock::update()
     // since this target is moving along desired direction of approach, the vehicle also comes on that line while following it
     if  (!force_real_target && hdg_corr_enable) {
         const float correction_vec_mag = hdg_corr_weight * dock_pos_rel_vehicle_m.projected(_desired_heading_NE).length();
-        target_m = _dock_pos_rel_origin_m.tofloat() - _desired_heading_NE * correction_vec_mag;
+        target_m = _dock_pos_rel_origin_m - _desired_heading_NE * correction_vec_mag;
     }
 
     const Vector2p target_pos { target_m.topostype() };
@@ -197,8 +190,8 @@ void ModeDock::update()
             "F0000000",
             "Qfffffff",
             AP_HAL::micros64(),
-            (float)_dock_pos_rel_origin_m.x,
-            (float)_dock_pos_rel_origin_m.y,
+            _dock_pos_rel_origin_m.x,
+            _dock_pos_rel_origin_m.y,
             _distance_to_destination,
             target_m.x,
             target_m.y,
@@ -259,7 +252,7 @@ bool ModeDock::calc_dock_pos_rel_vehicle_NE_m(Vector2f &dock_pos_rel_vehicle_m) 
         return false;
     }
  
-    dock_pos_rel_vehicle_m = _dock_pos_rel_origin_m.tofloat() - current_pos_m;
+    dock_pos_rel_vehicle_m = _dock_pos_rel_origin_m - current_pos_m;
     return true;
 }
 #endif // MODE_DOCK_ENABLED

@@ -23,15 +23,6 @@
 #define HAL_HIGH_LATENCY2_ENABLED 1
 #endif
 
-// MAV_CMD_GET_HOME_POSITION is redundant with
-// MAV_CMD_REQUEST_MESSAGE, it is slated for removal:
-// ArduPilot 4.8 allows it to be compiled out
-// ArduPilot 4.9 stops compiling in by default
-// ArduPilot 4.10 removes the code entirely
-#ifndef AP_MAVLINK_MAV_CMD_GET_HOME_POSITION_ENABLED
-#define AP_MAVLINK_MAV_CMD_GET_HOME_POSITION_ENABLED AP_AHRS_ENABLED
-#endif
-
 // handling of MISSION_SET_CURRENT (the message) is slated to be
 // removed.  It has signficant deficiencies vs MAV_CMD_DO_SET_CURRENT.
 // The command was added to the spec in January 2019 and to MAVLink in
@@ -43,11 +34,8 @@
 // AUTOPILOT_VERSION_REQUEST is slated to be removed; an instance of
 // AUTOPILOT_VERSION can be requested with MAV_CMD_REQUEST_MESSAGE,
 // which gets you an ACK/NACK
-// ArduPilot 4.5 allows to be compiled out
-// ArduPilot 4.8 stops compiling in by default
-// ArduPilot 4.9 removes the code entirely
 #ifndef AP_MAVLINK_AUTOPILOT_VERSION_REQUEST_ENABLED
-#define AP_MAVLINK_AUTOPILOT_VERSION_REQUEST_ENABLED (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
+#define AP_MAVLINK_AUTOPILOT_VERSION_REQUEST_ENABLED 1
 #endif
 
 #ifndef AP_MAVLINK_MSG_RC_CHANNELS_RAW_ENABLED
@@ -56,11 +44,8 @@
 
 // handling of MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES is slated to be
 // removed; the message can be requested with MAV_CMD_REQUEST_MESSAGE
-// ArduPilot 4.5 allows to be compiled out
-// ArduPilot 4.8 stops compiling in by default
-// ArduPilot 4.9 removes the code entirely
 #ifndef AP_MAVLINK_MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES_ENABLED
-#define AP_MAVLINK_MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES_ENABLED (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
+#define AP_MAVLINK_MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES_ENABLED 1
 #endif
 
 #ifndef HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
@@ -71,13 +56,17 @@
 #define AP_MAVLINK_MSG_RELAY_STATUS_ENABLED HAL_GCS_ENABLED && AP_RELAY_ENABLED
 #endif
 
-#ifndef AP_MAVLINK_MSG_WIND_ENABLED
-#define AP_MAVLINK_MSG_WIND_ENABLED AP_AHRS_ENABLED
-#endif
-
 // allow removal of developer-centric mavlink commands
 #ifndef AP_MAVLINK_FAILURE_CREATION_ENABLED
 #define AP_MAVLINK_FAILURE_CREATION_ENABLED 1
+#endif
+
+// CODE_REMOVAL
+// ArduPilot 4.6 sends deprecation warnings for RALLY_POINT/RALLY_FETCH_POINT
+// ArduPilot 4.7 stops compiling them in by default
+// ArduPilot 4.8 removes the code entirely
+#ifndef AP_MAVLINK_RALLY_POINT_PROTOCOL_ENABLED
+#define AP_MAVLINK_RALLY_POINT_PROTOCOL_ENABLED 0
 #endif
 
 // this is for both read and write messages:
@@ -116,10 +105,6 @@
 
 // RANGEFINDER is a subset of the DISTANCE_SENSOR message which we
 // also send.  Rover's send-minimum can be done on the client-side.
-// CODE_REMOVAL
-// ArduPilot 4.7 stops sending the message by default
-// ArduPilot 4.8 compiles the code out by default
-// ArduPilot 4.9 removes the code entirely
 #ifndef AP_MAVLINK_MSG_RANGEFINDER_SENDING_ENABLED
 #define AP_MAVLINK_MSG_RANGEFINDER_SENDING_ENABLED AP_RANGEFINDER_ENABLED
 #endif
@@ -135,13 +120,6 @@
 #define AP_MAVLINK_MSG_HIGHRES_IMU_ENABLED (HAL_PROGRAM_SIZE_LIMIT_KB > 1024) && AP_INERTIALSENSOR_ENABLED
 #endif
 
-// ArduPilot 4.4 stopped sending this message by default
-// ArduPilot 4.7 stops compiling support into the firmware
-// ArduPilot 4.8 removes the code
-#ifndef AP_MAVLINK_MSG_HWSTATUS_ENABLED
-#define AP_MAVLINK_MSG_HWSTATUS_ENABLED 0
-#endif
-
 #ifndef AP_MAVLINK_MAV_CMD_SET_HAGL_ENABLED
 #define AP_MAVLINK_MAV_CMD_SET_HAGL_ENABLED (HAL_PROGRAM_SIZE_LIMIT_KB > 1024)
 #endif
@@ -153,10 +131,6 @@
 #ifndef AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
 #define AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED HAL_GCS_ENABLED && AP_ARMING_ENABLED
 #endif  // AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
-
-#ifndef AP_MAVLINK_UTM_GLOBAL_POSITION_SENDING_ENABLED
-#define AP_MAVLINK_UTM_GLOBAL_POSITION_SENDING_ENABLED (HAL_GCS_ENABLED && AP_AHRS_ENABLED && (HAL_PROGRAM_SIZE_LIMIT_KB > 2048))
-#endif  // AP_MAVLINK_UTM_GLOBAL_POSITION_SENDING_ENABLED
 
 // deprecated 2025-02, replaced by MAV_CMD_DO_SET_GLOBAL_ORIGIN
 // ArduPilot 4.8 starts to warn if anyone uses this

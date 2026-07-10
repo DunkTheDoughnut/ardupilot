@@ -5,8 +5,8 @@ decode an stm32 ICSR register value
 AP_FLAKE8_CLEAN
 '''
 
-import optparse
 import sys
+import optparse
 
 
 class DecodeICSR(object):

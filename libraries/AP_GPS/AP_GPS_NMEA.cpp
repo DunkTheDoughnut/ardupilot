@@ -313,7 +313,7 @@ bool AP_GPS_NMEA::_term_complete()
                     state.ground_speed     = _new_speed*0.01f;
                     state.ground_course    = wrap_360(_new_course*0.01f);
                 }
-                if (state.status >= AP_GPS_FixType::FIX_3D) {
+                if (state.status >= AP_GPS::GPS_OK_FIX_3D) {
                     make_gps_time(_new_date, _new_time * 10);
                     if (_last_AGRICA_ms != 0) {
                         state.time_week_ms = _last_itow_ms;
@@ -337,28 +337,28 @@ bool AP_GPS_NMEA::_term_complete()
                 state.hdop          = _new_hdop;
                 switch(_new_quality_indicator) {
                 case 0: // Fix not available or invalid
-                    state.status = AP_GPS_FixType::NONE;
+                    state.status = AP_GPS::NO_FIX;
                     break;
                 case 1: // GPS SPS Mode, fix valid
-                    state.status = AP_GPS_FixType::FIX_3D;
+                    state.status = AP_GPS::GPS_OK_FIX_3D;
                     break;
                 case 2: // Differential GPS, SPS Mode, fix valid
-                    state.status = AP_GPS_FixType::DGPS;
+                    state.status = AP_GPS::GPS_OK_FIX_3D_DGPS;
                     break;
                 case 3: // GPS PPS Mode, fix valid
-                    state.status = AP_GPS_FixType::FIX_3D;
+                    state.status = AP_GPS::GPS_OK_FIX_3D;
                     break;
                 case 4: // Real Time Kinematic. System used in RTK mode with fixed integers
-                    state.status = AP_GPS_FixType::RTK_FIXED;
+                    state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FIXED;
                     break;
                 case 5: // Float RTK. Satellite system used in RTK mode, floating integers
-                    state.status = AP_GPS_FixType::RTK_FLOAT;
+                    state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT;
                     break;
                 case 6: // Estimated (dead reckoning) Mode
-                    state.status = AP_GPS_FixType::NONE;
+                    state.status = AP_GPS::NO_FIX;
                     break;
                 default://to maintain compatibility with MAV_GPS_INPUT and others
-                    state.status = AP_GPS_FixType::FIX_3D;
+                    state.status = AP_GPS::GPS_OK_FIX_3D;
                     break;
                 }
                 break;
@@ -704,14 +704,14 @@ void AP_GPS_NMEA::parse_agrica_field(uint16_t term_number, const char *term)
         ag.heading_status = atol(term);
         break;
     case 25 ... 26:
-        ag.vel_NED[term_number-25] = strtof(term, nullptr);
+        ag.vel_NED[term_number-25] = atof(term);
         break;
     case 27:
         // AGRIC gives velocity up
-        ag.vel_NED.z = -strtof(term, nullptr);
+        ag.vel_NED.z = -atof(term);
         break;
     case 28 ... 30:
-        ag.vel_stddev[term_number-28] = strtof(term, nullptr);
+        ag.vel_stddev[term_number-28] = atof(term);
         break;
     case 31:
         ag.lat = atof(term);
@@ -720,16 +720,16 @@ void AP_GPS_NMEA::parse_agrica_field(uint16_t term_number, const char *term)
         ag.lng = atof(term);
         break;
     case 33:
-        ag.alt = strtof(term, nullptr);
+        ag.alt = atof(term);
         break;
     case 49:
         ag.itow = atol(term);
         break;
     case 37 ... 39:
-        ag.pos_stddev[term_number-37] = strtof(term, nullptr);
+        ag.pos_stddev[term_number-37] = atof(term);
         break;
     case 52:
-        ag.undulation = strtof(term, nullptr);
+        ag.undulation = atof(term);
         break;
     }
 }
@@ -754,16 +754,16 @@ void AP_GPS_NMEA::parse_uniheadinga_field(uint16_t term_number, const char *term
     auto &uh = _uniheadinga;
     switch (term_number) {
     case 4:
-        uh.baseline_length = strtof(term, nullptr);
+        uh.baseline_length = atof(term);
         break;
     case 5:
-        uh.heading = strtof(term, nullptr);
+        uh.heading = atof(term);
         break;
     case 6:
-        uh.pitch = strtof(term, nullptr);
+        uh.pitch = atof(term);
         break;
     case 8:
-        uh.heading_sd = strtof(term, nullptr);
+        uh.heading_sd = atof(term);
         break;
     }
 }

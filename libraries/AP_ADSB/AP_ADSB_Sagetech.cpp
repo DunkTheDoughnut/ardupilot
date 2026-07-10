@@ -241,8 +241,7 @@ void AP_ADSB_Sagetech::handle_adsb_in_msg(const Packet_XP &msg)
 
         if (msg.payload[16] != 0) {
             // if string is non-null, consider it valid
-            // "The callsign, 8+null" (from the mavlink spec) means we subtract one here
-            memcpy(&vehicle.info.callsign, &msg.payload[16], MIN(ARRAY_SIZE(vehicle.info.callsign)-1, 8U));
+            memcpy(&vehicle.info, &msg.payload[16], 8);
             vehicle.info.flags |= ADSB_FLAGS_VALID_CALLSIGN;
         }
 

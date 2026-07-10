@@ -1,7 +1,5 @@
 #pragma once
 
-#include <hwdef.h>
-
 #define HAL_BOARD_NAME "SITL"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_1000
 #define HAL_MEM_CLASS HAL_MEM_CLASS_1000

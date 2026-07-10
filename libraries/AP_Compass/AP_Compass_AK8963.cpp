@@ -63,7 +63,7 @@ AP_Compass_AK8963::~AP_Compass_AK8963()
     delete _bus;
 }
 
-AP_Compass_Backend *AP_Compass_AK8963::probe(AP_HAL::OwnPtr<AP_HAL::Device> dev,
+AP_Compass_Backend *AP_Compass_AK8963::probe(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                                              enum Rotation rotation)
 {
     if (!dev) {
@@ -83,7 +83,7 @@ AP_Compass_Backend *AP_Compass_AK8963::probe(AP_HAL::OwnPtr<AP_HAL::Device> dev,
     return sensor;
 }
 
-AP_Compass_Backend *AP_Compass_AK8963::probe_mpu9250(AP_HAL::OwnPtr<AP_HAL::Device> dev,
+AP_Compass_Backend *AP_Compass_AK8963::probe_mpu9250(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev,
                                                      enum Rotation rotation)
 {
     if (!dev) {
@@ -162,11 +162,12 @@ bool AP_Compass_AK8963::init()
 
     /* register the compass instance in the frontend */
     _bus->set_device_type(DEVTYPE_AK8963);
-    if (!register_compass(_bus->get_bus_id())) {
+    if (!register_compass(_bus->get_bus_id(), _compass_instance)) {
         goto fail;
     }
+    set_dev_id(_compass_instance, _bus->get_bus_id());
 
-    set_rotation(_rotation);
+    set_rotation(_compass_instance, _rotation);
     bus_sem->give();
 
     _bus->register_periodic_callback(10000, FUNCTOR_BIND_MEMBER(&AP_Compass_AK8963::_update, void));
@@ -184,7 +185,7 @@ void AP_Compass_AK8963::read()
         return;
     }
 
-    drain_accumulated_samples();
+    drain_accumulated_samples(_compass_instance);
 }
 
 void AP_Compass_AK8963::_make_adc_sensitivity_adjustment(Vector3f& field) const
@@ -226,7 +227,7 @@ void AP_Compass_AK8963::_update()
     _make_adc_sensitivity_adjustment(raw_field);
     raw_field *= AK8963_MILLIGAUSS_SCALE;
 
-    accumulate_sample(raw_field, 10);
+    accumulate_sample(raw_field, _compass_instance, 10);
 }
 
 bool AP_Compass_AK8963::_check_id()
@@ -271,8 +272,8 @@ bool AP_Compass_AK8963::_calibrate()
     return true;
 }
 
-/* AP_HAL::Device implementation of the AK8963 */
-AP_AK8963_BusDriver_HALDevice::AP_AK8963_BusDriver_HALDevice(AP_HAL::OwnPtr<AP_HAL::Device> dev)
+/* AP_HAL::I2CDevice implementation of the AK8963 */
+AP_AK8963_BusDriver_HALDevice::AP_AK8963_BusDriver_HALDevice(AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : _dev(std::move(dev))
 {
 }

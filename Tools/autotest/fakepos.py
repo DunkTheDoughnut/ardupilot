@@ -5,12 +5,7 @@ import socket
 import struct
 import sys
 import time
-
-from math import cos
-from math import fabs
-from math import radians
-from math import sin
-from math import sqrt
+from math import cos, fabs, radians, sin, sqrt
 
 
 class udp_out(object):

@@ -5,20 +5,19 @@
 #if AP_RANGEFINDER_TOFSENSEF_I2C_ENABLED
 
 #include "AP_RangeFinder.h"
-#include "AP_RangeFinder_Backend_I2C.h"
+#include "AP_RangeFinder_Backend.h"
+
+#include <AP_HAL/I2CDevice.h>
 
 #define TOFSENSEP_I2C_DEFAULT_ADDR   0x08
 
-class AP_RangeFinder_TOFSenseF_I2C : public AP_RangeFinder_Backend_I2C
+class AP_RangeFinder_TOFSenseF_I2C : public AP_RangeFinder_Backend
 {
 public:
     // static detection function
     static AP_RangeFinder_Backend *detect(RangeFinder::RangeFinder_State &_state,
                                           AP_RangeFinder_Params &_params,
-                                          class AP_HAL::I2CDevice &dev) {
-        // this will free the object if configuration fails:
-        return configure(NEW_NOTHROW AP_RangeFinder_TOFSenseF_I2C(_state, _params, dev));
-    }
+                                          AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
     // update state
     void update(void) override;
@@ -31,9 +30,11 @@ protected:
 
 private:
     // constructor
-    using AP_RangeFinder_Backend_I2C::AP_RangeFinder_Backend_I2C;
+    AP_RangeFinder_TOFSenseF_I2C(RangeFinder::RangeFinder_State &_state,
+    								AP_RangeFinder_Params &_params,
+                                 AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
-    bool init(void) override;
+    bool init(void);
     void timer(void);
 
     uint32_t distance_mm;
@@ -42,6 +43,7 @@ private:
     // get a reading
     bool start_reading(void);
     bool get_reading(uint32_t &reading_mm, uint16_t &signal_strength, uint16_t &status);
+    AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
 };
 
 #endif  // AP_RANGEFINDER_TOFSENSEF_I2C_ENABLED

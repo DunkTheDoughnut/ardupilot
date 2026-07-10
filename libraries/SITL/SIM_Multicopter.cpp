@@ -26,16 +26,13 @@ using namespace SITL;
 MultiCopter::MultiCopter(const char *frame_str) :
     Aircraft(frame_str)
 {
-    frame = Frame::create_frame(frame_str);
+    frame = Frame::find_frame(frame_str);
     if (frame == nullptr) {
-        printf("Frame '%s' not found or insufficient memory", frame_str);
+        printf("Frame '%s' not found", frame_str);
         exit(1);
     }
 
-    frame->init(frame_str);
-    battery.setup(frame->get_model_batt_capacity_ah(),
-                  frame->get_model_batt_resistance_ohm(),
-                  frame->get_model_batt_max_voltage());
+    frame->init(frame_str, &battery);
 
     mass = frame->get_mass();
     frame_height = 0.1;
@@ -73,12 +70,10 @@ void MultiCopter::update(const struct sitl_input &input)
         accel_body.zero();
     }
 
-    battery.maybe_reset(sitl->batt_voltage, sitl->batt_capacity_ah);
-    battery_voltage = battery.get_voltage();
-    battery_current = frame->get_current_amp();
+    // estimate voltage and current
+    frame->current_and_voltage(battery_voltage, battery_current);
 
-    const uint64_t now_us = AP_HAL::micros64();
-    battery.consume_energy(battery_current, now_us);
+    battery.set_current(battery_current);
 
     update_dynamics(rot_accel);
     update_external_payload(input);

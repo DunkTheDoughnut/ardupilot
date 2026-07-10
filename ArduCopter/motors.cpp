@@ -6,32 +6,30 @@
 
 static uint32_t auto_disarm_begin;
 
-// auto_disarm_check - disarm after a configurable delay if landed and throttle is low,
-// unless takeoff/spool-up is being requested or auto-disarm is disabled.
+// auto_disarm_check - disarms the copter if it has been sitting on the ground in manual mode with throttle low for at least 15 seconds
 void Copter::auto_disarm_check()
 {
     uint32_t tnow_ms = millis();
-    uint32_t disarm_delay_ms = 1000*constrain_int16(g.disarm_delay, 0, INT8_MAX);
+    uint32_t disarm_delay_ms = 1000*constrain_int16(g.disarm_delay, 0, 127);
 
-    // Reset timer and exit if disarmed, auto-disarm disabled, or in THROW mode.
+    // exit immediately if we are already disarmed, or if auto
+    // disarming is disabled
     if (!motors->armed() || disarm_delay_ms == 0 || flightmode->mode_number() == Mode::Number::THROW) {
         auto_disarm_begin = tnow_ms;
         return;
     }
 
-    // If takeoff/spool-up is being requested (desired spool state beyond ground idle),
-    // inhibit auto-disarm (current spool state may lag during delays/checks).
-    if (motors->get_desired_spool_state() > AP_Motors::DesiredSpoolState::GROUND_IDLE
-        || motors->get_spool_state() > AP_Motors::SpoolState::GROUND_IDLE) {
+    // if the rotor is still spinning, don't initiate auto disarm
+    if (motors->get_spool_state() > AP_Motors::SpoolState::GROUND_IDLE) {
         auto_disarm_begin = tnow_ms;
         return;
     }
 
-    // If throttle interlock is used and disengaged, or Emergency Stop is active,
-    // shorten the auto-disarm delay (motors may be stopped so arming is less obvious)
+    // always allow auto disarm if using interlock switch or motors are Emergency Stopped
     if ((ap.using_interlock && !motors->get_interlock()) || SRV_Channels::get_emergency_stop()) {
 #if FRAME_CONFIG != HELI_FRAME
-        // Shorten delay when motors may be stopped (interlock off / e-stop), since arming is less obvious.
+        // use a shorter delay if using throttle interlock switch or Emergency Stop, because it is less
+        // obvious the copter is armed as the motors will not be spinning
         disarm_delay_ms /= 2;
 #endif
     } else {
@@ -45,7 +43,7 @@ void Copter::auto_disarm_check()
         }
 
         if (!thr_low || !ap.land_complete) {
-            // Reset timer whenever throttle is not low or vehicle is not landed.
+            // reset timer
             auto_disarm_begin = tnow_ms;
         }
     }

@@ -205,23 +205,23 @@ float ModeAuto::nav_bearing() const
 }
 
 // return cross track error (i.e. vehicle's distance from the line between waypoints)
-float ModeAuto::crosstrack_error_m() const
+float ModeAuto::crosstrack_error() const
 {
     switch (_submode) {
     case SubMode::WP:
-        return g2.wp_nav.crosstrack_error_m();
+        return g2.wp_nav.crosstrack_error();
     case SubMode::HeadingAndSpeed:
     case SubMode::Stop:
         return 0.0f;
     case SubMode::RTL:
-        return rover.mode_rtl.crosstrack_error_m();
+        return rover.mode_rtl.crosstrack_error();
     case SubMode::Loiter:
-        return rover.mode_loiter.crosstrack_error_m();
+        return rover.mode_loiter.crosstrack_error();
     case SubMode::Guided:
     case SubMode::NavScriptTime:
-        return rover.mode_guided.crosstrack_error_m();
+        return rover.mode_guided.crosstrack_error();
     case SubMode::Circle:
-        return g2.mode_circle.crosstrack_error_m();
+        return g2.mode_circle.crosstrack_error();
     }
 
     // this line should never be reached
@@ -252,7 +252,7 @@ float ModeAuto::get_desired_lat_accel() const
     return 0.0f;
 }
 
-// return straight-line distance (in meters) to destination
+// return distance (in meters) to destination
 float ModeAuto::get_distance_to_destination() const
 {
     switch (_submode) {
@@ -349,24 +349,24 @@ bool ModeAuto::reached_destination() const
 }
 
 // set desired speed in m/s
-bool ModeAuto::set_desired_speed(float speed_ms)
+bool ModeAuto::set_desired_speed(float speed)
 {
     switch (_submode) {
     case SubMode::WP:
     case SubMode::Stop:
-        return g2.wp_nav.set_speed_max(speed_ms);
+        return g2.wp_nav.set_speed_max(speed);
     case SubMode::HeadingAndSpeed:
-        _desired_speed = speed_ms;
+        _desired_speed = speed;
         return true;
     case SubMode::RTL:
-        return rover.mode_rtl.set_desired_speed(speed_ms);
+        return rover.mode_rtl.set_desired_speed(speed);
     case SubMode::Loiter:
-        return rover.mode_loiter.set_desired_speed(speed_ms);
+        return rover.mode_loiter.set_desired_speed(speed);
     case SubMode::Guided:
     case SubMode::NavScriptTime:
-        return rover.mode_guided.set_desired_speed(speed_ms);
+        return rover.mode_guided.set_desired_speed(speed);
     case SubMode::Circle:
-        return g2.mode_circle.set_desired_speed(speed_ms);
+        return g2.mode_circle.set_desired_speed(speed);
     }
     return false;
 }
