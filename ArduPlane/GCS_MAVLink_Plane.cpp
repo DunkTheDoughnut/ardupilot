@@ -144,8 +144,8 @@ void GCS_MAVLINK_Plane::send_pcac_meas()
         plane.TECS_controller.get_throttle_demand(),
         plane.stabilize_pitch_get_pitch_out(),
         plane.stabilize_roll_get_roll_out(),
-        plane.calc_nav_yaw_coordinated()
-        //plane.nav_controller->lateral_acceleration()
+        plane.calc_nav_yaw_coordinated(),
+        plane.nav_controller->lateral_acceleration()
         );
 }
 #endif //AP_PCAC_ENABLED
