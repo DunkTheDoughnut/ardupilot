@@ -32,6 +32,7 @@ https://www.python.org/downloads/
   sudo apt install python3-tk
   export MPLBACKEND=Qt5Agg
 ```
+
 # Rebuild MAVLink messages
 Copy ardupilotmega.xml from ros2pcac repository
 ```bash
@@ -61,7 +62,11 @@ Connect one end of a USB cable to the FMU USB port
 ```
 Once the "waiting for bootloader..." screen appears, plug the other end of the USB cable into the host computer.
 Ensure the cable is not unplugged during the flash process.
-    
+
+# Build SOH
+```bash
+./Tools/scripts/sitl-on-hardware/sitl-on-hw.py --board EchoPilotAI --vehicle plane --simclass Plane --upload --enable-custom-controller 
+```
 # GDB Commands	  
     r (run)
 	break file:linenumber (optional)

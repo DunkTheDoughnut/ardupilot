@@ -10,6 +10,17 @@ bool ModePcac::_enter()
 {
     plane.custom_control_reset_last = true;
     plane.custom_control_mission_active = true;
+    plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc;
+    // start or resume the mission, based on MIS_AUTORESET
+    plane.mission.start_or_resume();
+
+    if (hal.util->was_watchdog_armed()) {
+        if (hal.util->persistent_data.waypoint_num != 0) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Watchdog: resume WP %u", hal.util->persistent_data.waypoint_num);
+            plane.mission.set_current_cmd(hal.util->persistent_data.waypoint_num);
+            hal.util->persistent_data.waypoint_num = 0;
+        }
+    }
     
     //Must enter from auto mode to continue mission
     plane.heading = 0.0;
@@ -30,6 +41,7 @@ void ModePcac::_exit()
             plane.landing.restart_landing_sequence();
         }
     }
+    plane.auto_state.started_flying_in_auto_ms = 0;
 }
 
 void ModePcac::update()
